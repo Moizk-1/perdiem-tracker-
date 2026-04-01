@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Per Diem Tracker</title>
+<style>
+  :root {
+    --blue: #1a73e8;
+    --blue-light: #e8f0fe;
+    --green: #1e8e3e;
+    --green-light: #e6f4ea;
+    --red: #d93025;
+    --red-light: #fce8e6;
+    --orange: #e37400;
+    --orange-light: #fef7e0;
+    --gray-50: #f8f9fa;
+    --gray-100: #f1f3f4;
+    --gray-200: #e8eaed;
+    --gray-400: #9aa0a6;
+    --gray-600: #5f6368;
+    --gray-800: #3c4043;
+    --gray-900: #202124;
+    --card-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.08);
+    --card-shadow-hover: 0 4px 12px rgba(0,0,0,0.15);
+    --radius: 16px;
+    --radius-sm: 12px;
+    --radius-xs: 8px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--gray-100);
+    color: var(--gray-900);
+    min-height: 100vh;
+    padding-bottom: 100px;
+  }
+
+  /* Header */
+  .app-header {
+    background: var(--blue);
+    color: white;
+    padding: 20px 16px 16px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  .app-header h1 { font-size: 20px; font-weight: 600; letter-spacing: -0.3px; }
+  .app-header .subtitle { font-size: 13px; opacity: 0.85; margin-top: 2px; }
+
+  /* Sections */
+  .section { margin: 12px 12px 0; }
+
+  .card {
+    background: white;
+    border-radius: var(--radius);
+    box-shadow: var(--card-shadow);
+    overflow: hidden;
+  }
+
+  .card-header {
+    padding: 14px 16px 10px;
+    border-bottom: 1px solid var(--gray-200);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-header .icon { font-size: 18px; }
+  .card-header h2 { font-size: 15px; font-weight: 600; color: var(--gray-800); }
+
+  /* Location Search */
+  .search-wrap { padding: 12px 14px; }
+  #location-input {
+    width: 100%;
+    padding: 14px 16px;
+    font-size: 16px;
+    border: 2px solid var(--gray-200);
+    border-radius: var(--radius-sm);
+    outline: none;
+    background: var(--gray-50);
+    color: var(--gray-900);
+    transition: border-color 0.2s, background 0.2s;
+  }
+  #location-input:focus { border-color: var(--blue); background: white; }
+  #location-input::placeholder { color: var(--gray-400); }
+
+  .location-hint {
+    font-size: 12px;
+    color: var(--gray-400);
+    margin-top: 8px;
+    padding: 0 2px;
+  }
+
+  /* Rate Display */
+  .rate-display { padding: 12px 14px; }
+  .rate-location {
+    font-size: 13px;
+    color: var(--gray-600);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .rate-location .loc-icon { font-size: 15px; }
+  .rate-location .loc-name { font-weight: 500; color: var(--gray-800); }
+
+  .rate-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .rate-item {
+    background: var(--gray-50);
+    border-radius: var(--radius-sm);
+    padding: 14px 12px;
+    text-align: center;
+  }
+  .rate-item.highlight { background: var(--blue-light); }
+  .rate-label { font-size: 11px; font-weight: 600; color: var(--gray-600); text-transform: uppercase; letter-spacing: 0.5px; }
+  .rate-value { font-size: 26px; font-weight: 700; color: var(--gray-900); margin-top: 4px; }
+  .rate-value.blue { color: var(--blue); }
+  .rate-note { font-size: 11px; color: var(--gray-400); margin-top: 3px; }
+
+  /* Travel Day Toggle */
+  .travel-toggle { padding: 14px 16px; }
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .toggle-label-wrap { flex: 1; }
+  .toggle-label { font-size: 15px; font-weight: 500; color: var(--gray-800); }
+  .toggle-sub { font-size: 12px; color: var(--gray-400); margin-top: 2px; }
+
+  .toggle-switch {
+    position: relative;
+    width: 76px;
+    height: 38px;
+    flex-shrink: 0;
+  }
+  .toggle-switch input { opacity: 0; width: 0; height: 0; }
+  .toggle-track {
+    position: absolute;
+    inset: 0;
+    border-radius: 19px;
+    background: var(--gray-200);
+    cursor: pointer;
+    transition: background 0.25s;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 10px;
+  }
+  .toggle-track .t-yes,
+  .toggle-track .t-no {
+    font-size: 11px;
+    font-weight: 700;
+    color: transparent;
+    transition: color 0.25s;
+    pointer-events: none;
+  }
+  input:checked + .toggle-track { background: var(--blue); }
+  input:checked + .toggle-track .t-yes { color: white; }
+  .toggle-track .t-no { color: var(--gray-600); }
+  input:checked + .toggle-track .t-no { color: transparent; }
+
+  .toggle-thumb {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    transition: transform 0.25s cubic-bezier(.4,0,.2,1);
+    pointer-events: none;
+  }
+  input:checked ~ .toggle-thumb { transform: translateX(38px); }
+
+  .travel-effect {
+    margin-top: 10px;
+    padding: 8px 12px;
+    background: var(--orange-light);
+    border-radius: var(--radius-xs);
+    font-size: 12px;
+    color: var(--orange);
+    font-weight: 500;
+    display: none;
+    align-items: center;
+    gap: 6px;
+  }
+  .travel-effect.visible { display: flex; }
+
+  /* Add Expense */
+  .add-expense { padding: 12px 14px; }
+  .input-row {
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+  }
+  .input-group { flex: 1; }
+  .input-group.amount-group { flex: 0 0 110px; }
+  .input-label { font-size: 11px; font-weight: 600; color: var(--gray-600); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; display: block; }
+
+  .text-input, .amount-input {
+    width: 100%;
+    padding: 13px 14px;
+    font-size: 16px;
+    border: 2px solid var(--gray-200);
+    border-radius: var(--radius-sm);
+    outline: none;
+    background: var(--gray-50);
+    color: var(--gray-900);
+    transition: border-color 0.2s, background 0.2s;
+    -webkit-appearance: none;
+  }
+  .text-input:focus, .amount-input:focus { border-color: var(--blue); background: white; }
+  .amount-input { text-align: right; }
+
+  .add-btn {
+    padding: 13px 18px;
+    background: var(--blue);
+    color: white;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 22px;
+    font-weight: 700;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.15s, transform 0.1s;
+    -webkit-appearance: none;
+    line-height: 1;
+  }
+  .add-btn:active { background: #1557b0; transform: scale(0.96); }
+
+  /* Expense List */
+  .expense-list { padding: 0 14px 14px; max-height: 240px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .expense-empty {
+    text-align: center;
+    padding: 28px 16px;
+    color: var(--gray-400);
+    font-size: 14px;
+  }
+  .expense-empty .empty-icon { font-size: 36px; display: block; margin-bottom: 8px; }
+
+  .expense-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--gray-100);
+    animation: slideIn 0.2s ease;
+  }
+  .expense-item:last-child { border-bottom: none; }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .expense-num {
+    width: 26px;
+    height: 26px;
+    background: var(--gray-100);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--gray-600);
+    flex-shrink: 0;
+  }
+  .expense-desc { flex: 1; font-size: 15px; color: var(--gray-800); font-weight: 400; }
+  .expense-amount { font-size: 16px; font-weight: 600; color: var(--gray-900); }
+  .expense-delete {
+    width: 34px;
+    height: 34px;
+    border: none;
+    background: none;
+    color: var(--gray-400);
+    font-size: 18px;
+    cursor: pointer;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s, color 0.15s;
+    flex-shrink: 0;
+  }
+  .expense-delete:active { background: var(--red-light); color: var(--red); }
+
+  /* Summary Footer */
+  .summary-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 200;
+    background: white;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.12);
+    padding: 10px 14px 16px;
+    border-radius: 20px 20px 0 0;
+  }
+
+  .summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+  }
+  .summary-label { font-size: 12px; color: var(--gray-600); }
+  .summary-value { font-size: 13px; font-weight: 600; color: var(--gray-800); }
+
+  .divider { height: 1px; background: var(--gray-200); margin: 5px 0; }
+
+  .balance-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 14px;
+    border-radius: var(--radius-sm);
+    margin-top: 5px;
+    transition: background 0.3s;
+  }
+  .balance-row.under { background: var(--green-light); }
+  .balance-row.over { background: var(--red-light); }
+  .balance-row.even { background: var(--gray-100); }
+
+  .balance-label { font-size: 12px; font-weight: 600; }
+  .balance-row.under .balance-label { color: var(--green); }
+  .balance-row.over .balance-label { color: var(--red); }
+  .balance-row.even .balance-label { color: var(--gray-600); }
+
+  .balance-amount {
+    font-size: 22px;
+    font-weight: 800;
+    line-height: 1;
+    transition: color 0.3s;
+  }
+  .balance-row.under .balance-amount { color: var(--green); }
+  .balance-row.over .balance-amount { color: var(--red); }
+  .balance-row.even .balance-amount { color: var(--gray-600); }
+
+  .balance-icon { font-size: 18px; margin-right: 6px; }
+
+  .clear-btn {
+    width: 100%;
+    padding: 10px;
+    background: var(--gray-100);
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--gray-600);
+    cursor: pointer;
+    margin-top: 7px;
+    transition: background 0.15s;
+    -webkit-appearance: none;
+  }
+  .clear-btn:active { background: var(--gray-200); }
+
+  /* Date picker chip */
+  .date-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 20px;
+    padding: 4px 10px;
+    font-size: 12px;
+    margin-top: 6px;
+    cursor: pointer;
+  }
+  #date-picker {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 12px;
+    font-family: inherit;
+    outline: none;
+    cursor: pointer;
+    padding: 0;
+    min-width: 130px;
+    -webkit-appearance: none;
+  }
+  #date-picker::-webkit-calendar-picker-indicator { filter: invert(1); opacity: 0.8; cursor: pointer; }
+
+  /* Collapsible top sections */
+  #top-sections {
+    overflow: hidden;
+    max-height: 900px;
+    opacity: 1;
+    transition: max-height 0.38s cubic-bezier(.4,0,.2,1), opacity 0.28s;
+  }
+  #top-sections.collapsed { max-height: 0; opacity: 0; pointer-events: none; }
+  .collapse-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: calc(100% - 24px);
+    margin: 8px 12px 0;
+    padding: 9px;
+    background: white;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--gray-600);
+    cursor: pointer;
+    box-shadow: var(--card-shadow);
+    transition: background 0.15s;
+    -webkit-appearance: none;
+  }
+  .collapse-btn:active { background: var(--gray-100); }
+
+  /* Custom Nominatim autocomplete dropdown */
+  .search-wrap { position: relative; }
+  .autocomplete-dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0; right: 0;
+    background: white;
+    border-radius: var(--radius-sm);
+    box-shadow: var(--card-shadow-hover);
+    border: 1px solid var(--gray-200);
+    z-index: 9999;
+    overflow: hidden;
+    display: none;
+  }
+  .autocomplete-dropdown.open { display: block; }
+  .autocomplete-item {
+    padding: 14px 16px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--gray-100);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    transition: background 0.12s;
+  }
+  .autocomplete-item:last-child { border-bottom: none; }
+  .autocomplete-item:active { background: var(--blue-light); }
+  .autocomplete-item .ac-city { font-size: 15px; font-weight: 500; color: var(--gray-900); }
+  .autocomplete-item .ac-detail { font-size: 12px; color: var(--gray-400); }
+  .autocomplete-searching {
+    padding: 14px 16px;
+    font-size: 14px;
+    color: var(--gray-400);
+    text-align: center;
+  }
+
+  /* No-location state */
+  .no-rate-msg {
+    padding: 16px;
+    text-align: center;
+    color: var(--gray-400);
+    font-size: 14px;
+  }
+
+  /* Ripple touch feedback */
+  @keyframes ripple {
+    to { transform: scale(4); opacity: 0; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <h1>&#128179; Per Diem Tracker</h1>
+  <div class="subtitle">FY2026 GSA Rates &bull; Effective October 1, 2025</div>
+  <div class="date-chip">&#128197; <input type="date" id="date-picker"></div>
+</div>
+
+<div id="top-sections">
+<!-- Location -->
+<div class="section">
+  <div class="card">
+    <div class="card-header">
+      <span class="icon">&#128205;</span>
+      <h2>Hotel Location</h2>
+    </div>
+    <div class="search-wrap">
+      <input type="text" id="location-input" placeholder="Search hotel city or address..." autocomplete="off">
+      <div class="autocomplete-dropdown" id="ac-dropdown"></div>
+      <p class="location-hint">&#128269; Type your hotel city to find the per diem rate</p>
+    </div>
+    <div class="rate-display" id="rate-display">
+      <div class="no-rate-msg">Search a location above to load per diem rates</div>
+    </div>
+  </div>
+</div>
+
+<!-- Travel Day Toggle -->
+<div class="section">
+  <div class="card">
+    <div class="card-header">
+      <span class="icon">&#9992;&#65039;</span>
+      <h2>Travel Day?</h2>
+    </div>
+    <div class="travel-toggle">
+      <div class="toggle-row">
+        <div class="toggle-label-wrap">
+          <div class="toggle-label" id="toggle-label">No &mdash; Full Per Diem</div>
+          <div class="toggle-sub">Toggle if today is a departure or arrival day</div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="travel-toggle">
+          <div class="toggle-track">
+            <span class="t-yes">YES</span>
+            <span class="t-no">NO</span>
+          </div>
+          <div class="toggle-thumb"></div>
+        </label>
+      </div>
+      <div class="travel-effect" id="travel-effect">
+        &#9992;&#65039; Per diem reduced to 75% on travel days
+      </div>
+    </div>
+  </div>
+</div>
+</div><!-- end #top-sections -->
+
+<button class="collapse-btn" id="collapse-btn" onclick="toggleTop()">
+  <span id="collapse-icon">&#9650;</span>&nbsp;<span id="collapse-text">Hide Details</span>
+</button>
+
+<!-- Add Expense -->
+<div class="section">
+  <div class="card">
+    <div class="card-header">
+      <span class="icon">&#43;</span>
+      <h2>Add Expense</h2>
+    </div>
+    <div class="add-expense">
+      <div class="input-row">
+        <div class="input-group">
+          <label class="input-label" for="expense-desc">Description</label>
+          <input type="text" id="expense-desc" class="text-input" placeholder="e.g. Lunch, Coffee..." autocomplete="off">
+        </div>
+        <div class="input-group amount-group">
+          <label class="input-label" for="expense-amount">Amount</label>
+          <input type="number" id="expense-amount" class="amount-input" placeholder="0.00" min="0" step="0.01" inputmode="decimal">
+        </div>
+        <button class="add-btn" id="add-btn" onclick="addExpense()">+</button>
+      </div>
+    </div>
+    <div class="expense-list" id="expense-list">
+      <div class="expense-empty">
+        <span class="empty-icon">&#127860;</span>
+        No expenses yet &mdash; add your first one above
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Fixed Summary Footer -->
+<div class="summary-footer">
+  <div class="summary-row">
+    <span class="summary-label">M&amp;IE Rate (effective)</span>
+    <span class="summary-value" id="footer-rate">&#8212;</span>
+  </div>
+  <div class="summary-row">
+    <span class="summary-label">Total Spent</span>
+    <span class="summary-value" id="footer-spent">$0.00</span>
+  </div>
+  <div class="divider"></div>
+  <div class="balance-row even" id="balance-row">
+    <div style="display:flex;align-items:center">
+      <span class="balance-icon" id="balance-icon">&#8213;</span>
+      <span class="balance-label" id="balance-label">Remaining</span>
+    </div>
+    <span class="balance-amount" id="balance-amount">&#8212;</span>
+  </div>
+  <button class="clear-btn" onclick="clearAll()">&#128465; Clear All Expenses</button>
+</div>
+
+<script>
+const PER_DIEM_DATA = [{"id":1,"state":"AL","destination":"Birmingham","county":"Jefferson","season_begin":"","season_end":"","lodging":126,"mie":80},{"id":2,"state":"AL","destination":"Gulf Shores","county":"Baldwin","season_begin":"October 1","season_end":"February 28","lodging":134,"mie":74},{"id":2,"state":"AL","destination":"Gulf Shores","county":"Baldwin","season_begin":"March 1","season_end":"May 31","lodging":163,"mie":74},{"id":2,"state":"AL","destination":"Gulf Shores","county":"Baldwin","season_begin":"June 1","season_end":"July 31","lodging":216,"mie":74},{"id":2,"state":"AL","destination":"Gulf Shores","county":"Baldwin","season_begin":"August 1","season_end":"September 30","lodging":134,"mie":74},{"id":3,"state":"AL","destination":"Huntsville","county":"Madison","season_begin":"October 1","season_end":"March 31","lodging":141,"mie":74},{"id":3,"state":"AL","destination":"Huntsville","county":"Madison","season_begin":"April 1","season_end":"July 31","lodging":134,"mie":74},{"id":3,"state":"AL","destination":"Huntsville","county":"Madison","season_begin":"August 1","season_end":"September 30","lodging":141,"mie":74},{"id":460,"state":"AL","destination":"Mobile","county":"Mobile","season_begin":"","season_end":"","lodging":114,"mie":74},{"id":6,"state":"AR","destination":"Hot Springs","county":"Garland","season_begin":"","season_end":"","lodging":114,"mie":68},{"id":9,"state":"AZ","destination":"Grand Canyon / Flagstaff","county":"Coconino / Yavapai less the city of Sedona","season_begin":"October 1","season_end":"October 31","lodging":144,"mie":80},{"id":9,"state":"AZ","destination":"Grand Canyon / Flagstaff","county":"Coconino / Yavapai less the city of Sedona","season_begin":"November 1","season_end":"February 28","lodging":110,"mie":80},{"id":9,"state":"AZ","destination":"Grand Canyon / Flagstaff","county":"Coconino / Yavapai less the city of Sedona","season_begin":"March 1","season_end":"September 30","lodging":144,"mie":80},{"id":8,"state":"AZ","destination":"Kayenta","county":"Navajo","season_begin":"","season_end":"","lodging":145,"mie":74},{"id":10,"state":"AZ","destination":"Phoenix / Scottsdale","county":"Maricopa","season_begin":"October 1","season_end":"January 31","lodging":160,"mie":86},{"id":10,"state":"AZ","destination":"Phoenix / Scottsdale","county":"Maricopa","season_begin":"February 1","season_end":"March 31","lodging":229,"mie":86},{"id":10,"state":"AZ","destination":"Phoenix / Scottsdale","county":"Maricopa","season_begin":"April 1","season_end":"May 31","lodging":161,"mie":86},{"id":10,"state":"AZ","destination":"Phoenix / Scottsdale","county":"Maricopa","season_begin":"June 1","season_end":"August 31","lodging":113,"mie":86},{"id":10,"state":"AZ","destination":"Phoenix / Scottsdale","county":"Maricopa","season_begin":"September 1","season_end":"September 30","lodging":160,"mie":86},{"id":11,"state":"AZ","destination":"Sedona","county":"City Limits of Sedona","season_begin":"October 1","season_end":"December 31","lodging":213,"mie":92},{"id":11,"state":"AZ","destination":"Sedona","county":"City Limits of Sedona","season_begin":"January 1","season_end":"February 28","lodging":164,"mie":92},{"id":11,"state":"AZ","destination":"Sedona","county":"City Limits of Sedona","season_begin":"March 1","season_end":"April 30","lodging":274,"mie":92},{"id":11,"state":"AZ","destination":"Sedona","county":"City Limits of Sedona","season_begin":"May 1","season_end":"August 31","lodging":183,"mie":92},{"id":11,"state":"AZ","destination":"Sedona","county":"City Limits of Sedona","season_begin":"September 1","season_end":"September 30","lodging":213,"mie":92},{"id":12,"state":"AZ","destination":"Tucson","county":"Pima","season_begin":"October 1","season_end":"December 31","lodging":123,"mie":80},{"id":12,"state":"AZ","destination":"Tucson","county":"Pima","season_begin":"January 1","season_end":"March 31","lodging":171,"mie":80},{"id":12,"state":"AZ","destination":"Tucson","county":"Pima","season_begin":"April 1","season_end":"September 30","lodging":123,"mie":80},{"id":14,"state":"CA","destination":"Antioch / Brentwood / Concord","county":"Contra Costa","season_begin":"","season_end":"","lodging":147,"mie":86},{"id":481,"state":"CA","destination":"Bakersfield / Ridgecrest","county":"Kern","season_begin":"","season_end":"","lodging":132,"mie":74},{"id":16,"state":"CA","destination":"Barstow / Ontario / Victorville","county":"San Bernardino","season_begin":"","season_end":"","lodging":124,"mie":86},{"id":20,"state":"CA","destination":"Death Valley","county":"Inyo / NAWS China Lake","season_begin":"","season_end":"","lodging":142,"mie":80},{"id":461,"state":"CA","destination":"Eureka / Arcata / McKinleyville","county":"Humboldt","season_begin":"October 1","season_end":"May 31","lodging":125,"mie":86},{"id":461,"state":"CA","destination":"Eureka / Arcata / McKinleyville","county":"Humboldt","season_begin":"June 1","season_end":"August 31","lodging":172,"mie":86},{"id":461,"state":"CA","destination":"Eureka / Arcata / McKinleyville","county":"Humboldt","season_begin":"September 1","season_end":"September 30","lodging":125,"mie":86},{"id":21,"state":"CA","destination":"Fresno","county":"Fresno","season_begin":"","season_end":"","lodging":129,"mie":86},{"id":22,"state":"CA","destination":"Los Angeles","county":"Los Angeles / Orange / Ventura / Edwards AFB less the city of Santa Monica","season_begin":"","season_end":"","lodging":191,"mie":86},{"id":23,"state":"CA","destination":"Mammoth Lakes","county":"Mono","season_begin":"October 1","season_end":"November 30","lodging":139,"mie":86},{"id":23,"state":"CA","destination":"Mammoth Lakes","county":"Mono","season_begin":"December 1","season_end":"March 31","lodging":195,"mie":86},{"id":23,"state":"CA","destination":"Mammoth Lakes","county":"Mono","season_begin":"April 1","season_end":"September 30","lodging":139,"mie":86},{"id":24,"state":"CA","destination":"Mill Valley / San Rafael / Novato","county":"Marin","season_begin":"October 1","season_end":"May 31","lodging":153,"mie":92},{"id":24,"state":"CA","destination":"Mill Valley / San Rafael / Novato","county":"Marin","season_begin":"June 1","season_end":"September 30","lodging":175,"mie":92},{"id":26,"state":"CA","destination":"Monterey","county":"Monterey","season_begin":"October 1","season_end":"January 31","lodging":191,"mie":92},{"id":26,"state":"CA","destination":"Monterey","county":"Monterey","season_begin":"February 1","season_end":"June 30","lodging":199,"mie":92},{"id":26,"state":"CA","destination":"Monterey","county":"Monterey","season_begin":"July 1","season_end":"August 31","lodging":279,"mie":92},{"id":26,"state":"CA","destination":"Monterey","county":"Monterey","season_begin":"September 1","season_end":"September 30","lodging":191,"mie":92},{"id":27,"state":"CA","destination":"Napa","county":"Napa","season_begin":"October 1","season_end":"November 30","lodging":246,"mie":92},{"id":27,"state":"CA","destination":"Napa","county":"Napa","season_begin":"December 1","season_end":"January 31","lodging":172,"mie":92},{"id":27,"state":"CA","destination":"Napa","county":"Napa","season_begin":"February 1","season_end":"September 30","lodging":246,"mie":92},{"id":28,"state":"CA","destination":"Oakhurst","county":"Madera","season_begin":"","season_end":"","lodging":135,"mie":80},{"id":29,"state":"CA","destination":"Oakland","county":"Alameda","season_begin":"","season_end":"","lodging":145,"mie":92},{"id":30,"state":"CA","destination":"Palm Springs","county":"Riverside","season_begin":"October 1","season_end":"April 30","lodging":186,"mie":86},{"id":30,"state":"CA","destination":"Palm Springs","county":"Riverside","season_begin":"May 1","season_end":"September 30","lodging":141,"mie":86},{"id":31,"state":"CA","destination":"Point Arena / Gualala","county":"Mendocino","season_begin":"","season_end":"","lodging":129,"mie":86},{"id":33,"state":"CA","destination":"Sacramento","county":"Sacramento","season_begin":"","season_end":"","lodging":150,"mie":86},{"id":34,"state":"CA","destination":"San Diego","county":"San Diego","season_begin":"October 1","season_end":"May 31","lodging":199,"mie":86},{"id":34,"state":"CA","destination":"San Diego","county":"San Diego","season_begin":"June 1","season_end":"July 31","lodging":237,"mie":86},{"id":34,"state":"CA","destination":"San Diego","county":"San Diego","season_begin":"August 1","season_end":"September 30","lodging":199,"mie":86},{"id":35,"state":"CA","destination":"San Francisco","county":"San Francisco","season_begin":"October 1","season_end":"December 31","lodging":272,"mie":92},{"id":35,"state":"CA","destination":"San Francisco","county":"San Francisco","season_begin":"January 1","season_end":"August 31","lodging":259,"mie":92},{"id":35,"state":"CA","destination":"San Francisco","county":"San Francisco","season_begin":"September 1","season_end":"September 30","lodging":272,"mie":92},{"id":36,"state":"CA","destination":"San Luis Obispo","county":"San Luis Obispo","season_begin":"October 1","season_end":"May 31","lodging":163,"mie":86},{"id":36,"state":"CA","destination":"San Luis Obispo","county":"San Luis Obispo","season_begin":"June 1","season_end":"July 31","lodging":203,"mie":86},{"id":36,"state":"CA","destination":"San Luis Obispo","county":"San Luis Obispo","season_begin":"August 1","season_end":"September 30","lodging":163,"mie":86},{"id":37,"state":"CA","destination":"San Mateo / Foster City / Belmont","county":"San Mateo","season_begin":"","season_end":"","lodging":183,"mie":86},{"id":38,"state":"CA","destination":"Santa Barbara","county":"Santa Barbara","season_begin":"October 1","season_end":"June 30","lodging":205,"mie":92},{"id":38,"state":"CA","destination":"Santa Barbara","county":"Santa Barbara","season_begin":"July 1","season_end":"August 31","lodging":262,"mie":92},{"id":38,"state":"CA","destination":"Santa Barbara","county":"Santa Barbara","season_begin":"September 1","season_end":"September 30","lodging":205,"mie":92},{"id":39,"state":"CA","destination":"Santa Cruz","county":"Santa Cruz","season_begin":"October 1","season_end":"May 31","lodging":139,"mie":86},{"id":39,"state":"CA","destination":"Santa Cruz","county":"Santa Cruz","season_begin":"June 1","season_end":"August 31","lodging":176,"mie":86},{"id":39,"state":"CA","destination":"Santa Cruz","county":"Santa Cruz","season_begin":"September 1","season_end":"September 30","lodging":139,"mie":86},{"id":40,"state":"CA","destination":"Santa Monica","county":"City limits of Santa Monica","season_begin":"","season_end":"","lodging":273,"mie":92},{"id":41,"state":"CA","destination":"Santa Rosa","county":"Sonoma","season_begin":"","season_end":"","lodging":157,"mie":86},{"id":42,"state":"CA","destination":"South Lake Tahoe","county":"El Dorado","season_begin":"October 1","season_end":"November 30","lodging":141,"mie":86},{"id":42,"state":"CA","destination":"South Lake Tahoe","county":"El Dorado","season_begin":"December 1","season_end":"March 31","lodging":247,"mie":86},{"id":42,"state":"CA","destination":"South Lake Tahoe","county":"El Dorado","season_begin":"April 1","season_end":"May 31","lodging":143,"mie":86},{"id":42,"state":"CA","destination":"South Lake Tahoe","county":"El Dorado","season_begin":"June 1","season_end":"August 31","lodging":171,"mie":86},{"id":42,"state":"CA","destination":"South Lake Tahoe","county":"El Dorado","season_begin":"September 1","season_end":"September 30","lodging":141,"mie":86},{"id":43,"state":"CA","destination":"Stockton","county":"San Joaquin","season_begin":"","season_end":"","lodging":132,"mie":74},{"id":44,"state":"CA","destination":"Sunnyvale / Palo Alto / San Jose","county":"Santa Clara","season_begin":"","season_end":"","lodging":192,"mie":92},{"id":45,"state":"CA","destination":"Tahoe City","county":"Placer","season_begin":"","season_end":"","lodging":131,"mie":86},{"id":46,"state":"CA","destination":"Truckee","county":"Nevada","season_begin":"October 1","season_end":"November 30","lodging":142,"mie":86},{"id":46,"state":"CA","destination":"Truckee","county":"Nevada","season_begin":"December 1","season_end":"February 28","lodging":169,"mie":86},{"id":46,"state":"CA","destination":"Truckee","county":"Nevada","season_begin":"March 1","season_end":"May 31","lodging":146,"mie":86},{"id":46,"state":"CA","destination":"Truckee","county":"Nevada","season_begin":"June 1","season_end":"August 31","lodging":173,"mie":86},{"id":46,"state":"CA","destination":"Truckee","county":"Nevada","season_begin":"September 1","season_end":"September 30","lodging":142,"mie":86},{"id":47,"state":"CA","destination":"Visalia","county":"Tulare","season_begin":"","season_end":"","lodging":131,"mie":80},{"id":48,"state":"CA","destination":"West Sacramento / Davis","county":"Yolo","season_begin":"","season_end":"","lodging":142,"mie":80},{"id":49,"state":"CA","destination":"Yosemite National Park","county":"Mariposa","season_begin":"October 1","season_end":"December 31","lodging":181,"mie":86},{"id":49,"state":"CA","destination":"Yosemite National Park","county":"Mariposa","season_begin":"January 1","season_end":"April 30","lodging":203,"mie":86},{"id":49,"state":"CA","destination":"Yosemite National Park","county":"Mariposa","season_begin":"May 1","season_end":"September 30","lodging":181,"mie":86},{"id":50,"state":"CO","destination":"Aspen","county":"Pitkin","season_begin":"October 1","season_end":"November 30","lodging":207,"mie":92},{"id":50,"state":"CO","destination":"Aspen","county":"Pitkin","season_begin":"December 1","season_end":"March 31","lodging":407,"mie":92},{"id":50,"state":"CO","destination":"Aspen","county":"Pitkin","season_begin":"April 1","season_end":"September 30","lodging":207,"mie":92},{"id":52,"state":"CO","destination":"Boulder / Broomfield","county":"Boulder / Broomfield","season_begin":"October 1","season_end":"October 31","lodging":173,"mie":80},{"id":52,"state":"CO","destination":"Boulder / Broomfield","county":"Boulder / Broomfield","season_begin":"November 1","season_end":"April 30","lodging":125,"mie":80},{"id":52,"state":"CO","destination":"Boulder / Broomfield","county":"Boulder / Broomfield","season_begin":"May 1","season_end":"September 30","lodging":173,"mie":80},{"id":53,"state":"CO","destination":"Colorado Springs","county":"El Paso","season_begin":"October 1","season_end":"May 31","lodging":123,"mie":86},{"id":53,"state":"CO","destination":"Colorado Springs","county":"El Paso","season_begin":"June 1","season_end":"August 31","lodging":168,"mie":86},{"id":53,"state":"CO","destination":"Colorado Springs","county":"El Paso","season_begin":"September 1","season_end":"September 30","lodging":123,"mie":86},{"id":54,"state":"CO","destination":"Cortez","county":"Montezuma","season_begin":"October 1","season_end":"October 31","lodging":133,"mie":74},{"id":54,"state":"CO","destination":"Cortez","county":"Montezuma","season_begin":"November 1","season_end":"April 30","lodging":110,"mie":74},{"id":54,"state":"CO","destination":"Cortez","county":"Montezuma","season_begin":"May 1","season_end":"September 30","lodging":133,"mie":74},{"id":55,"state":"CO","destination":"Crested Butte / Gunnison","county":"Gunnison","season_begin":"","season_end":"","lodging":154,"mie":86},{"id":56,"state":"CO","destination":"Denver / Aurora","county":"Denver / Adams / Arapahoe / Jefferson","season_begin":"October 1","season_end":"October 31","lodging":215,"mie":92},{"id":56,"state":"CO","destination":"Denver / Aurora","county":"Denver / Adams / Arapahoe / Jefferson","season_begin":"November 1","season_end":"March 31","lodging":165,"mie":92},{"id":56,"state":"CO","destination":"Denver / Aurora","county":"Denver / Adams / Arapahoe / Jefferson","season_begin":"April 1","season_end":"September 30","lodging":215,"mie":92},{"id":427,"state":"CO","destination":"Douglas","county":"Douglas","season_begin":"October 1","season_end":"May 31","lodging":111,"mie":80},{"id":427,"state":"CO","destination":"Douglas","county":"Douglas","season_begin":"June 1","season_end":"August 31","lodging":142,"mie":80},{"id":427,"state":"CO","destination":"Douglas","county":"Douglas","season_begin":"September 1","season_end":"September 30","lodging":111,"mie":80},{"id":57,"state":"CO","destination":"Durango","county":"La Plata","season_begin":"October 1","season_end":"May 31","lodging":121,"mie":80},{"id":57,"state":"CO","destination":"Durango","county":"La Plata","season_begin":"June 1","season_end":"September 30","lodging":184,"mie":80},{"id":58,"state":"CO","destination":"Fort Collins / Loveland","county":"Larimer","season_begin":"October 1","season_end":"May 31","lodging":110,"mie":80},{"id":58,"state":"CO","destination":"Fort Collins / Loveland","county":"Larimer","season_begin":"June 1","season_end":"August 31","lodging":140,"mie":80},{"id":58,"state":"CO","destination":"Fort Collins / Loveland","county":"Larimer","season_begin":"September 1","season_end":"September 30","lodging":110,"mie":80},{"id":493,"state":"CO","destination":"Grand Lake","county":"Grand","season_begin":"October 1","season_end":"November 30","lodging":145,"mie":86},{"id":493,"state":"CO","destination":"Grand Lake","county":"Grand","season_begin":"December 1","season_end":"March 31","lodging":173,"mie":86},{"id":493,"state":"CO","destination":"Grand Lake","county":"Grand","season_begin":"April 1","season_end":"May 31","lodging":122,"mie":86},{"id":493,"state":"CO","destination":"Grand Lake","county":"Grand","season_begin":"June 1","season_end":"September 30","lodging":145,"mie":86},{"id":61,"state":"CO","destination":"Montrose","county":"Montrose","season_begin":"October 1","season_end":"October 31","lodging":185,"mie":74},{"id":61,"state":"CO","destination":"Montrose","county":"Montrose","season_begin":"November 1","season_end":"May 31","lodging":136,"mie":74},{"id":61,"state":"CO","destination":"Montrose","county":"Montrose","season_begin":"June 1","season_end":"September 30","lodging":185,"mie":74},{"id":63,"state":"CO","destination":"Silverthorne / Breckenridge","county":"Summit","season_begin":"October 1","season_end":"November 30","lodging":162,"mie":92},{"id":63,"state":"CO","destination":"Silverthorne / Breckenridge","county":"Summit","season_begin":"December 1","season_end":"March 31","lodging":282,"mie":92},{"id":63,"state":"CO","destination":"Silverthorne / Breckenridge","county":"Summit","season_begin":"April 1","season_end":"September 30","lodging":162,"mie":92},{"id":64,"state":"CO","destination":"Steamboat Springs","county":"Routt","season_begin":"October 1","season_end":"November 30","lodging":132,"mie":92},{"id":64,"state":"CO","destination":"Steamboat Springs","county":"Routt","season_begin":"December 1","season_end":"March 31","lodging":288,"mie":92},{"id":64,"state":"CO","destination":"Steamboat Springs","county":"Routt","season_begin":"April 1","season_end":"May 31","lodging":123,"mie":92},{"id":64,"state":"CO","destination":"Steamboat Springs","county":"Routt","season_begin":"June 1","season_end":"September 30","lodging":179,"mie":92},{"id":65,"state":"CO","destination":"Telluride","county":"San Miguel","season_begin":"October 1","season_end":"November 30","lodging":184,"mie":92},{"id":65,"state":"CO","destination":"Telluride","county":"San Miguel","season_begin":"December 1","season_end":"March 31","lodging":350,"mie":92},{"id":65,"state":"CO","destination":"Telluride","county":"San Miguel","season_begin":"April 1","season_end":"September 30","lodging":184,"mie":92},{"id":66,"state":"CO","destination":"Vail","county":"Eagle","season_begin":"October 1","season_end":"November 30","lodging":201,"mie":92},{"id":66,"state":"CO","destination":"Vail","county":"Eagle","season_begin":"December 1","season_end":"March 31","lodging":397,"mie":92},{"id":66,"state":"CO","destination":"Vail","county":"Eagle","season_begin":"April 1","season_end":"September 30","lodging":201,"mie":92},{"id":67,"state":"CT","destination":"Bridgeport / Danbury","county":"Fairfield","season_begin":"","season_end":"","lodging":146,"mie":86},{"id":69,"state":"CT","destination":"Hartford","county":"Hartford","season_begin":"","season_end":"","lodging":138,"mie":80},{"id":71,"state":"CT","destination":"New Haven","county":"New Haven","season_begin":"","season_end":"","lodging":130,"mie":80},{"id":72,"state":"CT","destination":"New London / Groton","county":"New London","season_begin":"","season_end":"","lodging":124,"mie":86},{"id":75,"state":"DC","destination":"District of Columbia","county":"Washington DC (also the cities of Alexandria, Falls Church and Fairfax, and the counties of Arlington and Fairfax, in Virginia; and the counties of Montgomery and Prince George's in Maryland)","season_begin":"October 1","season_end":"October 31","lodging":275,"mie":92},{"id":75,"state":"DC","destination":"District of Columbia","county":"Washington DC (also the cities of Alexandria, Falls Church and Fairfax, and the counties of Arlington and Fairfax, in Virginia; and the counties of Montgomery and Prince George's in Maryland)","season_begin":"November 1","season_end":"February 28","lodging":196,"mie":92},{"id":75,"state":"DC","destination":"District of Columbia","county":"Washington DC (also the cities of Alexandria, Falls Church and Fairfax, and the counties of Arlington and Fairfax, in Virginia; and the counties of Montgomery and Prince George's in Maryland)","season_begin":"March 1","season_end":"June 30","lodging":276,"mie":92},{"id":75,"state":"DC","destination":"District of Columbia","county":"Washington DC (also the cities of Alexandria, Falls Church and Fairfax, and the counties of Arlington and Fairfax, in Virginia; and the counties of Montgomery and Prince George's in Maryland)","season_begin":"July 1","season_end":"August 31","lodging":183,"mie":92},{"id":75,"state":"DC","destination":"District of Columbia","county":"Washington DC (also the cities of Alexandria, Falls Church and Fairfax, and the counties of Arlington and Fairfax, in Virginia; and the counties of Montgomery and Prince George's in Maryland)","season_begin":"September 1","season_end":"September 30","lodging":275,"mie":92},{"id":77,"state":"DE","destination":"Lewes","county":"Sussex","season_begin":"October 1","season_end":"May 31","lodging":124,"mie":74},{"id":77,"state":"DE","destination":"Lewes","county":"Sussex","season_begin":"June 1","season_end":"August 31","lodging":221,"mie":74},{"id":77,"state":"DE","destination":"Lewes","county":"Sussex","season_begin":"September 1","season_end":"September 30","lodging":124,"mie":74},{"id":78,"state":"DE","destination":"Wilmington","county":"New Castle","season_begin":"","season_end":"","lodging":127,"mie":74},{"id":99,"state":"FL","destination":"Boca Raton / Delray Beach / Jupiter","county":"Palm Beach / Hendry","season_begin":"October 1","season_end":"December 31","lodging":171,"mie":86},{"id":99,"state":"FL","destination":"Boca Raton / Delray Beach / Jupiter","county":"Palm Beach / Hendry","season_begin":"January 1","season_end":"April 30","lodging":244,"mie":86},{"id":99,"state":"FL","destination":"Boca Raton / Delray Beach / Jupiter","county":"Palm Beach / Hendry","season_begin":"May 1","season_end":"September 30","lodging":143,"mie":86},{"id":80,"state":"FL","destination":"Bradenton","county":"Manatee","season_begin":"October 1","season_end":"January 31","lodging":151,"mie":80},{"id":80,"state":"FL","destination":"Bradenton","county":"Manatee","season_begin":"February 1","season_end":"March 31","lodging":225,"mie":80},{"id":80,"state":"FL","destination":"Bradenton","county":"Manatee","season_begin":"April 1","season_end":"September 30","lodging":145,"mie":80},{"id":81,"state":"FL","destination":"Cocoa Beach","county":"Brevard","season_begin":"October 1","season_end":"January 31","lodging":166,"mie":74},{"id":81,"state":"FL","destination":"Cocoa Beach","county":"Brevard","season_begin":"February 1","season_end":"March 31","lodging":208,"mie":74},{"id":81,"state":"FL","destination":"Cocoa Beach","county":"Brevard","season_begin":"April 1","season_end":"September 30","lodging":166,"mie":74},{"id":82,"state":"FL","destination":"Daytona Beach","county":"Volusia","season_begin":"October 1","season_end":"December 31","lodging":116,"mie":80},{"id":82,"state":"FL","destination":"Daytona Beach","county":"Volusia","season_begin":"January 1","season_end":"April 30","lodging":157,"mie":80},{"id":82,"state":"FL","destination":"Daytona Beach","county":"Volusia","season_begin":"May 1","season_end":"July 31","lodging":138,"mie":80},{"id":82,"state":"FL","destination":"Daytona Beach","county":"Volusia","season_begin":"August 1","season_end":"September 30","lodging":116,"mie":80},{"id":84,"state":"FL","destination":"Fort Lauderdale","county":"Broward","season_begin":"October 1","season_end":"December 31","lodging":172,"mie":86},{"id":84,"state":"FL","destination":"Fort Lauderdale","county":"Broward","season_begin":"January 1","season_end":"April 30","lodging":224,"mie":86},{"id":84,"state":"FL","destination":"Fort Lauderdale","county":"Broward","season_begin":"May 1","season_end":"September 30","lodging":143,"mie":86},{"id":85,"state":"FL","destination":"Fort Myers","county":"Lee","season_begin":"October 1","season_end":"December 31","lodging":139,"mie":80},{"id":85,"state":"FL","destination":"Fort Myers","county":"Lee","season_begin":"January 1","season_end":"March 31","lodging":216,"mie":80},{"id":85,"state":"FL","destination":"Fort Myers","county":"Lee","season_begin":"April 1","season_end":"September 30","lodging":139,"mie":80},{"id":83,"state":"FL","destination":"Fort Walton Beach / De Funiak Springs","county":"Okaloosa / Walton","season_begin":"October 1","season_end":"October 31","lodging":164,"mie":86},{"id":83,"state":"FL","destination":"Fort Walton Beach / De Funiak Springs","county":"Okaloosa / Walton","season_begin":"November 1","season_end":"February 28","lodging":110,"mie":86},{"id":83,"state":"FL","destination":"Fort Walton Beach / De Funiak Springs","county":"Okaloosa / Walton","season_begin":"March 1","season_end":"May 31","lodging":184,"mie":86},{"id":83,"state":"FL","destination":"Fort Walton Beach / De Funiak Springs","county":"Okaloosa / Walton","season_begin":"June 1","season_end":"July 31","lodging":260,"mie":86},{"id":83,"state":"FL","destination":"Fort Walton Beach / De Funiak Springs","county":"Okaloosa / Walton","season_begin":"August 1","season_end":"September 30","lodging":164,"mie":86},{"id":89,"state":"FL","destination":"Gulf Breeze","county":"Santa Rosa","season_begin":"October 1","season_end":"February 28","lodging":124,"mie":74},{"id":89,"state":"FL","destination":"Gulf Breeze","county":"Santa Rosa","season_begin":"March 1","season_end":"May 31","lodging":161,"mie":74},{"id":89,"state":"FL","destination":"Gulf Breeze","county":"Santa Rosa","season_begin":"June 1","season_end":"July 31","lodging":214,"mie":74},{"id":89,"state":"FL","destination":"Gulf Breeze","county":"Santa Rosa","season_begin":"August 1","season_end":"September 30","lodging":124,"mie":74},{"id":91,"state":"FL","destination":"Key West","county":"Monroe","season_begin":"October 1","season_end":"November 30","lodging":269,"mie":86},{"id":91,"state":"FL","destination":"Key West","county":"Monroe","season_begin":"December 1","season_end":"January 31","lodging":366,"mie":86},{"id":91,"state":"FL","destination":"Key West","county":"Monroe","season_begin":"February 1","season_end":"April 30","lodging":436,"mie":86},{"id":91,"state":"FL","destination":"Key West","county":"Monroe","season_begin":"May 1","season_end":"September 30","lodging":258,"mie":86},{"id":95,"state":"FL","destination":"Miami","county":"Miami-Dade","season_begin":"October 1","season_end":"November 30","lodging":145,"mie":92},{"id":95,"state":"FL","destination":"Miami","county":"Miami-Dade","season_begin":"December 1","season_end":"January 31","lodging":210,"mie":92},{"id":95,"state":"FL","destination":"Miami","county":"Miami-Dade","season_begin":"February 1","season_end":"March 31","lodging":232,"mie":92},{"id":95,"state":"FL","destination":"Miami","county":"Miami-Dade","season_begin":"April 1","season_end":"May 31","lodging":182,"mie":92},{"id":95,"state":"FL","destination":"Miami","county":"Miami-Dade","season_begin":"June 1","season_end":"September 30","lodging":145,"mie":92},{"id":96,"state":"FL","destination":"Naples","county":"Collier","season_begin":"October 1","season_end":"November 30","lodging":164,"mie":80},{"id":96,"state":"FL","destination":"Naples","county":"Collier","season_begin":"December 1","season_end":"January 31","lodging":257,"mie":80},{"id":96,"state":"FL","destination":"Naples","county":"Collier","season_begin":"February 1","season_end":"April 30","lodging":314,"mie":80},{"id":96,"state":"FL","destination":"Naples","county":"Collier","season_begin":"May 1","season_end":"September 30","lodging":164,"mie":80},{"id":98,"state":"FL","destination":"Orlando","county":"Orange","season_begin":"October 1","season_end":"December 31","lodging":140,"mie":80},{"id":98,"state":"FL","destination":"Orlando","county":"Orange","season_begin":"January 1","season_end":"March 31","lodging":169,"mie":80},{"id":98,"state":"FL","destination":"Orlando","county":"Orange","season_begin":"April 1","season_end":"September 30","lodging":140,"mie":80},{"id":100,"state":"FL","destination":"Panama City","county":"Bay","season_begin":"October 1","season_end":"February 28","lodging":110,"mie":80},{"id":100,"state":"FL","destination":"Panama City","county":"Bay","season_begin":"March 1","season_end":"May 31","lodging":147,"mie":80},{"id":100,"state":"FL","destination":"Panama City","county":"Bay","season_begin":"June 1","season_end":"July 31","lodging":194,"mie":80},{"id":100,"state":"FL","destination":"Panama City","county":"Bay","season_begin":"August 1","season_end":"September 30","lodging":110,"mie":80},{"id":101,"state":"FL","destination":"Pensacola","county":"Escambia","season_begin":"October 1","season_end":"February 28","lodging":120,"mie":74},{"id":101,"state":"FL","destination":"Pensacola","county":"Escambia","season_begin":"March 1","season_end":"May 31","lodging":149,"mie":74},{"id":101,"state":"FL","destination":"Pensacola","county":"Escambia","season_begin":"June 1","season_end":"July 31","lodging":190,"mie":74},{"id":101,"state":"FL","destination":"Pensacola","county":"Escambia","season_begin":"August 1","season_end":"September 30","lodging":120,"mie":74},{"id":102,"state":"FL","destination":"Punta Gorda","county":"Charlotte","season_begin":"October 1","season_end":"January 31","lodging":124,"mie":74},{"id":102,"state":"FL","destination":"Punta Gorda","county":"Charlotte","season_begin":"February 1","season_end":"March 31","lodging":192,"mie":74},{"id":102,"state":"FL","destination":"Punta Gorda","county":"Charlotte","season_begin":"April 1","season_end":"September 30","lodging":124,"mie":74},{"id":103,"state":"FL","destination":"Sarasota","county":"Sarasota","season_begin":"October 1","season_end":"January 31","lodging":145,"mie":86},{"id":103,"state":"FL","destination":"Sarasota","county":"Sarasota","season_begin":"February 1","season_end":"April 30","lodging":205,"mie":86},{"id":103,"state":"FL","destination":"Sarasota","county":"Sarasota","season_begin":"May 1","season_end":"September 30","lodging":131,"mie":86},{"id":104,"state":"FL","destination":"Sebring","county":"Highlands","season_begin":"October 1","season_end":"January 31","lodging":126,"mie":74},{"id":104,"state":"FL","destination":"Sebring","county":"Highlands","season_begin":"February 1","season_end":"March 31","lodging":219,"mie":74},{"id":104,"state":"FL","destination":"Sebring","county":"Highlands","season_begin":"April 1","season_end":"September 30","lodging":126,"mie":74},{"id":105,"state":"FL","destination":"St. Augustine","county":"St. Johns","season_begin":"October 1","season_end":"November 30","lodging":151,"mie":80},{"id":105,"state":"FL","destination":"St. Augustine","county":"St. Johns","season_begin":"December 1","season_end":"March 31","lodging":170,"mie":80},{"id":105,"state":"FL","destination":"St. Augustine","county":"St. Johns","season_begin":"April 1","season_end":"September 30","lodging":151,"mie":80},{"id":106,"state":"FL","destination":"Stuart","county":"Martin","season_begin":"October 1","season_end":"January 31","lodging":129,"mie":80},{"id":106,"state":"FL","destination":"Stuart","county":"Martin","season_begin":"February 1","season_end":"March 31","lodging":214,"mie":80},{"id":106,"state":"FL","destination":"Stuart","county":"Martin","season_begin":"April 1","season_end":"September 30","lodging":129,"mie":80},{"id":107,"state":"FL","destination":"Tallahassee","county":"Leon","season_begin":"October 1","season_end":"December 31","lodging":113,"mie":80},{"id":107,"state":"FL","destination":"Tallahassee","county":"Leon","season_begin":"January 1","season_end":"April 30","lodging":138,"mie":80},{"id":107,"state":"FL","destination":"Tallahassee","county":"Leon","season_begin":"May 1","season_end":"September 30","lodging":113,"mie":80},{"id":108,"state":"FL","destination":"Tampa / St. Petersburg","county":"Pinellas / Hillsborough","season_begin":"October 1","season_end":"January 31","lodging":148,"mie":80},{"id":108,"state":"FL","destination":"Tampa / St. Petersburg","county":"Pinellas / Hillsborough","season_begin":"February 1","season_end":"April 30","lodging":200,"mie":80},{"id":108,"state":"FL","destination":"Tampa / St. Petersburg","county":"Pinellas / Hillsborough","season_begin":"May 1","season_end":"September 30","lodging":148,"mie":80},{"id":109,"state":"FL","destination":"Vero Beach","county":"Indian River","season_begin":"October 1","season_end":"November 30","lodging":181,"mie":74},{"id":109,"state":"FL","destination":"Vero Beach","county":"Indian River","season_begin":"December 1","season_end":"April 30","lodging":259,"mie":74},{"id":109,"state":"FL","destination":"Vero Beach","county":"Indian River","season_begin":"May 1","season_end":"September 30","lodging":181,"mie":74},{"id":110,"state":"GA","destination":"Athens","county":"Clarke","season_begin":"","season_end":"","lodging":136,"mie":74},{"id":111,"state":"GA","destination":"Atlanta","county":"Fulton / Dekalb","season_begin":"October 1","season_end":"December 31","lodging":182,"mie":86},{"id":111,"state":"GA","destination":"Atlanta","county":"Fulton / Dekalb","season_begin":"January 1","season_end":"March 31","lodging":197,"mie":86},{"id":111,"state":"GA","destination":"Atlanta","county":"Fulton / Dekalb","season_begin":"April 1","season_end":"September 30","lodging":182,"mie":86},{"id":413,"state":"GA","destination":"Augusta","county":"Richmond","season_begin":"October 1","season_end":"April 30","lodging":125,"mie":74},{"id":413,"state":"GA","destination":"Augusta","county":"Richmond","season_begin":"May 1","season_end":"June 30","lodging":110,"mie":74},{"id":413,"state":"GA","destination":"Augusta","county":"Richmond","season_begin":"July 1","season_end":"September 30","lodging":125,"mie":74},{"id":115,"state":"GA","destination":"Jekyll Island / Brunswick","county":"Glynn","season_begin":"October 1","season_end":"February 28","lodging":172,"mie":86},{"id":115,"state":"GA","destination":"Jekyll Island / Brunswick","county":"Glynn","season_begin":"March 1","season_end":"July 31","lodging":223,"mie":86},{"id":115,"state":"GA","destination":"Jekyll Island / Brunswick","county":"Glynn","season_begin":"August 1","season_end":"September 30","lodging":172,"mie":86},{"id":494,"state":"GA","destination":"Marietta","county":"Cobb","season_begin":"","season_end":"","lodging":126,"mie":74},{"id":116,"state":"GA","destination":"Savannah","county":"Chatham","season_begin":"October 1","season_end":"February 28","lodging":147,"mie":80},{"id":116,"state":"GA","destination":"Savannah","county":"Chatham","season_begin":"March 1","season_end":"April 30","lodging":176,"mie":80},{"id":116,"state":"GA","destination":"Savannah","county":"Chatham","season_begin":"May 1","season_end":"September 30","lodging":147,"mie":80},{"id":476,"state":"IA","destination":"Dallas","county":"Dallas","season_begin":"","season_end":"","lodging":115,"mie":80},{"id":118,"state":"IA","destination":"Des Moines","county":"Polk","season_begin":"","season_end":"","lodging":121,"mie":80},{"id":495,"state":"ID","destination":"Boise","county":"Ada","season_begin":"October 1","season_end":"October 31","lodging":191,"mie":86},{"id":495,"state":"ID","destination":"Boise","county":"Ada","season_begin":"November 1","season_end":"May 31","lodging":167,"mie":86},{"id":495,"state":"ID","destination":"Boise","county":"Ada","season_begin":"June 1","season_end":"September 30","lodging":191,"mie":86},{"id":120,"state":"ID","destination":"Coeur d'Alene","county":"Kootenai","season_begin":"October 1","season_end":"May 31","lodging":142,"mie":74},{"id":120,"state":"ID","destination":"Coeur d'Alene","county":"Kootenai","season_begin":"June 1","season_end":"August 31","lodging":217,"mie":74},{"id":120,"state":"ID","destination":"Coeur d'Alene","county":"Kootenai","season_begin":"September 1","season_end":"September 30","lodging":142,"mie":74},{"id":122,"state":"ID","destination":"Sun Valley / Ketchum","county":"Blaine / Elmore","season_begin":"October 1","season_end":"November 30","lodging":191,"mie":80},{"id":122,"state":"ID","destination":"Sun Valley / Ketchum","county":"Blaine / Elmore","season_begin":"December 1","season_end":"March 31","lodging":300,"mie":80},{"id":122,"state":"ID","destination":"Sun Valley / Ketchum","county":"Blaine / Elmore","season_begin":"April 1","season_end":"May 31","lodging":181,"mie":80},{"id":122,"state":"ID","destination":"Sun Valley / Ketchum","county":"Blaine / Elmore","season_begin":"June 1","season_end":"September 30","lodging":295,"mie":80},{"id":422,"state":"IL","destination":"Bolingbrook / Romeoville / Lemont","county":"Will","season_begin":"","season_end":"","lodging":114,"mie":74},{"id":123,"state":"IL","destination":"Chicago","county":"Cook / Lake","season_begin":"October 1","season_end":"November 30","lodging":223,"mie":92},{"id":123,"state":"IL","destination":"Chicago","county":"Cook / Lake","season_begin":"December 1","season_end":"March 31","lodging":142,"mie":92},{"id":123,"state":"IL","destination":"Chicago","county":"Cook / Lake","season_begin":"April 1","season_end":"June 30","lodging":234,"mie":92},{"id":123,"state":"IL","destination":"Chicago","county":"Cook / Lake","season_begin":"July 1","season_end":"August 31","lodging":202,"mie":92},{"id":123,"state":"IL","destination":"Chicago","county":"Cook / Lake","season_begin":"September 1","season_end":"September 30","lodging":223,"mie":92},{"id":462,"state":"IL","destination":"East St. Louis / O'Fallon / Fairview Heights","county":"St. Clair","season_begin":"","season_end":"","lodging":150,"mie":86},{"id":124,"state":"IL","destination":"Oak Brook Terrace","county":"DuPage","season_begin":"","season_end":"","lodging":115,"mie":80},{"id":127,"state":"IN","destination":"Bloomington","county":"Monroe","season_begin":"October 1","season_end":"April 30","lodging":110,"mie":74},{"id":127,"state":"IN","destination":"Bloomington","county":"Monroe","season_begin":"May 1","season_end":"August 31","lodging":139,"mie":74},{"id":127,"state":"IN","destination":"Bloomington","county":"Monroe","season_begin":"September 1","season_end":"September 30","lodging":110,"mie":74},{"id":130,"state":"IN","destination":"Indianapolis / Carmel","county":"Marion / Hamilton","season_begin":"","season_end":"","lodging":133,"mie":80},{"id":131,"state":"IN","destination":"Lafayette / West Lafayette","county":"Tippecanoe","season_begin":"October 1","season_end":"July 31","lodging":123,"mie":74},{"id":131,"state":"IN","destination":"Lafayette / West Lafayette","county":"Tippecanoe","season_begin":"August 1","season_end":"September 30","lodging":143,"mie":74},{"id":137,"state":"KS","destination":"Kansas City / Overland Park","county":"Wyandotte / Johnson / Leavenworth","season_begin":"","season_end":"","lodging":135,"mie":80},{"id":139,"state":"KY","destination":"Boone","county":"Boone","season_begin":"","season_end":"","lodging":116,"mie":68},{"id":436,"state":"KY","destination":"Kenton","county":"Kenton","season_begin":"","season_end":"","lodging":163,"mie":86},{"id":140,"state":"KY","destination":"Lexington","county":"Fayette","season_begin":"","season_end":"","lodging":118,"mie":80},{"id":141,"state":"KY","destination":"Louisville","county":"Jefferson","season_begin":"October 1","season_end":"October 31","lodging":164,"mie":80},{"id":141,"state":"KY","destination":"Louisville","county":"Jefferson","season_begin":"November 1","season_end":"January 31","lodging":120,"mie":80},{"id":141,"state":"KY","destination":"Louisville","county":"Jefferson","season_begin":"February 1","season_end":"May 31","lodging":155,"mie":80},{"id":141,"state":"KY","destination":"Louisville","county":"Jefferson","season_begin":"June 1","season_end":"August 31","lodging":134,"mie":80},{"id":141,"state":"KY","destination":"Louisville","county":"Jefferson","season_begin":"September 1","season_end":"September 30","lodging":164,"mie":80},{"id":478,"state":"LA","destination":"Alexandria / Leesville / Natchitoches","county":"Allen / Jefferson Davis / Natchitoches / Rapides / Vernon Parishes","season_begin":"","season_end":"","lodging":112,"mie":68},{"id":144,"state":"LA","destination":"New Orleans","county":"Orleans / Jefferson Parishes","season_begin":"October 1","season_end":"January 31","lodging":157,"mie":80},{"id":144,"state":"LA","destination":"New Orleans","county":"Orleans / Jefferson Parishes","season_begin":"February 1","season_end":"May 31","lodging":179,"mie":80},{"id":144,"state":"LA","destination":"New Orleans","county":"Orleans / Jefferson Parishes","season_begin":"June 1","season_end":"August 31","lodging":133,"mie":80},{"id":144,"state":"LA","destination":"New Orleans","county":"Orleans / Jefferson Parishes","season_begin":"September 1","season_end":"September 30","lodging":157,"mie":80},{"id":147,"state":"MA","destination":"Andover","county":"Essex","season_begin":"","season_end":"","lodging":137,"mie":80},{"id":148,"state":"MA","destination":"Boston / Cambridge","county":"Suffolk, city of Cambridge","season_begin":"October 1","season_end":"October 31","lodging":349,"mie":92},{"id":148,"state":"MA","destination":"Boston / Cambridge","county":"Suffolk, city of Cambridge","season_begin":"November 1","season_end":"February 28","lodging":209,"mie":92},{"id":148,"state":"MA","destination":"Boston / Cambridge","county":"Suffolk, city of Cambridge","season_begin":"March 1","season_end":"August 31","lodging":291,"mie":92},{"id":148,"state":"MA","destination":"Boston / Cambridge","county":"Suffolk, city of Cambridge","season_begin":"September 1","season_end":"September 30","lodging":349,"mie":92},{"id":149,"state":"MA","destination":"Burlington / Woburn","county":"Middlesex less the city of Cambridge","season_begin":"October 1","season_end":"October 31","lodging":178,"mie":86},{"id":149,"state":"MA","destination":"Burlington / Woburn","county":"Middlesex less the city of Cambridge","season_begin":"November 1","season_end":"April 30","lodging":144,"mie":86},{"id":149,"state":"MA","destination":"Burlington / Woburn","county":"Middlesex less the city of Cambridge","season_begin":"May 1","season_end":"September 30","lodging":178,"mie":86},{"id":150,"state":"MA","destination":"Falmouth","county":"City limits of Falmouth","season_begin":"October 1","season_end":"June 30","lodging":142,"mie":86},{"id":150,"state":"MA","destination":"Falmouth","county":"City limits of Falmouth","season_begin":"July 1","season_end":"August 31","lodging":253,"mie":86},{"id":150,"state":"MA","destination":"Falmouth","county":"City limits of Falmouth","season_begin":"September 1","season_end":"September 30","lodging":142,"mie":86},{"id":151,"state":"MA","destination":"Hyannis","county":"Barnstable less the city of Falmouth","season_begin":"October 1","season_end":"June 30","lodging":131,"mie":92},{"id":151,"state":"MA","destination":"Hyannis","county":"Barnstable less the city of Falmouth","season_begin":"July 1","season_end":"August 31","lodging":209,"mie":92},{"id":151,"state":"MA","destination":"Hyannis","county":"Barnstable less the city of Falmouth","season_begin":"September 1","season_end":"September 30","lodging":131,"mie":92},{"id":152,"state":"MA","destination":"Martha's Vineyard","county":"Dukes","season_begin":"October 1","season_end":"May 31","lodging":196,"mie":92},{"id":152,"state":"MA","destination":"Martha's Vineyard","county":"Dukes","season_begin":"June 1","season_end":"September 30","lodging":462,"mie":92},{"id":153,"state":"MA","destination":"Nantucket","county":"Nantucket","season_begin":"October 1","season_end":"May 31","lodging":175,"mie":92},{"id":153,"state":"MA","destination":"Nantucket","county":"Nantucket","season_begin":"June 1","season_end":"September 30","lodging":471,"mie":92},{"id":154,"state":"MA","destination":"Northampton","county":"Hampshire","season_begin":"","season_end":"","lodging":157,"mie":80},{"id":155,"state":"MA","destination":"Pittsfield","county":"Berkshire","season_begin":"October 1","season_end":"June 30","lodging":136,"mie":86},{"id":155,"state":"MA","destination":"Pittsfield","county":"Berkshire","season_begin":"July 1","season_end":"August 31","lodging":178,"mie":86},{"id":155,"state":"MA","destination":"Pittsfield","county":"Berkshire","season_begin":"September 1","season_end":"September 30","lodging":136,"mie":86},{"id":156,"state":"MA","destination":"Plymouth / Taunton / New Bedford","county":"Plymouth / Bristol","season_begin":"","season_end":"","lodging":126,"mie":80},{"id":157,"state":"MA","destination":"Quincy","county":"Norfolk","season_begin":"October 1","season_end":"October 31","lodging":175,"mie":80},{"id":157,"state":"MA","destination":"Quincy","county":"Norfolk","season_begin":"November 1","season_end":"April 30","lodging":139,"mie":80},{"id":157,"state":"MA","destination":"Quincy","county":"Norfolk","season_begin":"May 1","season_end":"September 30","lodging":175,"mie":80},{"id":158,"state":"MA","destination":"Springfield","county":"Hampden","season_begin":"","season_end":"","lodging":128,"mie":74},{"id":160,"state":"MA","destination":"Worcester","county":"Worcester","season_begin":"","season_end":"","lodging":135,"mie":80},{"id":161,"state":"MD","destination":"Aberdeen / Bel Air / Belcamp","county":"Harford","season_begin":"","season_end":"","lodging":113,"mie":74},{"id":162,"state":"MD","destination":"Annapolis","county":"Anne Arundel","season_begin":"October 1","season_end":"October 31","lodging":161,"mie":80},{"id":162,"state":"MD","destination":"Annapolis","county":"Anne Arundel","season_begin":"November 1","season_end":"April 30","lodging":125,"mie":80},{"id":162,"state":"MD","destination":"Annapolis","county":"Anne Arundel","season_begin":"May 1","season_end":"September 30","lodging":161,"mie":80},{"id":163,"state":"MD","destination":"Baltimore City","county":"Baltimore City","season_begin":"","season_end":"","lodging":150,"mie":86},{"id":164,"state":"MD","destination":"Cambridge / St. Michaels","county":"Dorchester / Talbot","season_begin":"October 1","season_end":"May 31","lodging":145,"mie":80},{"id":164,"state":"MD","destination":"Cambridge / St. Michaels","county":"Dorchester / Talbot","season_begin":"June 1","season_end":"August 31","lodging":186,"mie":80},{"id":164,"state":"MD","destination":"Cambridge / St. Michaels","county":"Dorchester / Talbot","season_begin":"September 1","season_end":"September 30","lodging":145,"mie":80},{"id":473,"state":"MD","destination":"Centreville","county":"Queen Anne","season_begin":"October 1","season_end":"October 31","lodging":154,"mie":74},{"id":473,"state":"MD","destination":"Centreville","county":"Queen Anne","season_begin":"November 1","season_end":"April 30","lodging":121,"mie":74},{"id":473,"state":"MD","destination":"Centreville","county":"Queen Anne","season_begin":"May 1","season_end":"September 30","lodging":154,"mie":74},{"id":165,"state":"MD","destination":"Columbia","county":"Howard","season_begin":"","season_end":"","lodging":113,"mie":86},{"id":170,"state":"MD","destination":"Ocean City","county":"Worcester","season_begin":"October 1","season_end":"May 31","lodging":115,"mie":80},{"id":170,"state":"MD","destination":"Ocean City","county":"Worcester","season_begin":"June 1","season_end":"August 31","lodging":295,"mie":80},{"id":170,"state":"MD","destination":"Ocean City","county":"Worcester","season_begin":"September 1","season_end":"September 30","lodging":115,"mie":80},{"id":171,"state":"ME","destination":"Bar Harbor / Rockport","county":"Hancock / Knox","season_begin":"October 1","season_end":"October 31","lodging":264,"mie":92},{"id":171,"state":"ME","destination":"Bar Harbor / Rockport","county":"Hancock / Knox","season_begin":"November 1","season_end":"April 30","lodging":128,"mie":92},{"id":171,"state":"ME","destination":"Bar Harbor / Rockport","county":"Hancock / Knox","season_begin":"May 1","season_end":"June 30","lodging":209,"mie":92},{"id":171,"state":"ME","destination":"Bar Harbor / Rockport","county":"Hancock / Knox","season_begin":"July 1","season_end":"August 31","lodging":304,"mie":92},{"id":171,"state":"ME","destination":"Bar Harbor / Rockport","county":"Hancock / Knox","season_begin":"September 1","season_end":"September 30","lodging":264,"mie":92},{"id":172,"state":"ME","destination":"Kennebunk / Kittery / Sanford","county":"York","season_begin":"October 1","season_end":"October 31","lodging":153,"mie":86},{"id":172,"state":"ME","destination":"Kennebunk / Kittery / Sanford","county":"York","season_begin":"November 1","season_end":"June 30","lodging":119,"mie":86},{"id":172,"state":"ME","destination":"Kennebunk / Kittery / Sanford","county":"York","season_begin":"July 1","season_end":"August 31","lodging":201,"mie":86},{"id":172,"state":"ME","destination":"Kennebunk / Kittery / Sanford","county":"York","season_begin":"September 1","season_end":"September 30","lodging":153,"mie":86},{"id":173,"state":"ME","destination":"Portland","county":"Cumberland / Sagadahoc","season_begin":"October 1","season_end":"October 31","lodging":199,"mie":80},{"id":173,"state":"ME","destination":"Portland","county":"Cumberland / Sagadahoc","season_begin":"November 1","season_end":"May 31","lodging":114,"mie":80},{"id":173,"state":"ME","destination":"Portland","county":"Cumberland / Sagadahoc","season_begin":"June 1","season_end":"August 31","lodging":211,"mie":80},{"id":173,"state":"ME","destination":"Portland","county":"Cumberland / Sagadahoc","season_begin":"September 1","season_end":"September 30","lodging":199,"mie":80},{"id":175,"state":"MI","destination":"Ann Arbor","county":"Washtenaw","season_begin":"October 1","season_end":"March 31","lodging":125,"mie":80},{"id":175,"state":"MI","destination":"Ann Arbor","county":"Washtenaw","season_begin":"April 1","season_end":"August 31","lodging":146,"mie":80},{"id":175,"state":"MI","destination":"Ann Arbor","county":"Washtenaw","season_begin":"September 1","season_end":"September 30","lodging":125,"mie":80},{"id":178,"state":"MI","destination":"Detroit","county":"Wayne","season_begin":"","season_end":"","lodging":152,"mie":74},{"id":183,"state":"MI","destination":"Grand Rapids","county":"Kent","season_begin":"","season_end":"","lodging":119,"mie":80},{"id":184,"state":"MI","destination":"Holland","county":"Ottawa","season_begin":"October 1","season_end":"April 30","lodging":116,"mie":74},{"id":184,"state":"MI","destination":"Holland","county":"Ottawa","season_begin":"May 1","season_end":"August 31","lodging":157,"mie":74},{"id":184,"state":"MI","destination":"Holland","county":"Ottawa","season_begin":"September 1","season_end":"September 30","lodging":116,"mie":74},{"id":187,"state":"MI","destination":"Mackinac Island","county":"Mackinac","season_begin":"October 1","season_end":"June 30","lodging":120,"mie":86},{"id":187,"state":"MI","destination":"Mackinac Island","county":"Mackinac","season_begin":"July 1","season_end":"August 31","lodging":195,"mie":86},{"id":187,"state":"MI","destination":"Mackinac Island","county":"Mackinac","season_begin":"September 1","season_end":"September 30","lodging":120,"mie":86},{"id":188,"state":"MI","destination":"Midland","county":"Midland","season_begin":"","season_end":"","lodging":120,"mie":74},{"id":190,"state":"MI","destination":"Muskegon","county":"Muskegon","season_begin":"October 1","season_end":"May 31","lodging":110,"mie":68},{"id":190,"state":"MI","destination":"Muskegon","county":"Muskegon","season_begin":"June 1","season_end":"August 31","lodging":149,"mie":68},{"id":190,"state":"MI","destination":"Muskegon","county":"Muskegon","season_begin":"September 1","season_end":"September 30","lodging":110,"mie":68},{"id":192,"state":"MI","destination":"Petoskey","county":"Emmet","season_begin":"October 1","season_end":"October 31","lodging":171,"mie":86},{"id":192,"state":"MI","destination":"Petoskey","county":"Emmet","season_begin":"November 1","season_end":"May 31","lodging":116,"mie":86},{"id":192,"state":"MI","destination":"Petoskey","county":"Emmet","season_begin":"June 1","season_end":"August 31","lodging":220,"mie":86},{"id":192,"state":"MI","destination":"Petoskey","county":"Emmet","season_begin":"September 1","season_end":"September 30","lodging":171,"mie":86},{"id":193,"state":"MI","destination":"Pontiac / Auburn Hills","county":"Oakland","season_begin":"","season_end":"","lodging":116,"mie":80},{"id":195,"state":"MI","destination":"South Haven","county":"Van Buren","season_begin":"October 1","season_end":"May 31","lodging":110,"mie":68},{"id":195,"state":"MI","destination":"South Haven","county":"Van Buren","season_begin":"June 1","season_end":"August 31","lodging":142,"mie":68},{"id":195,"state":"MI","destination":"South Haven","county":"Van Buren","season_begin":"September 1","season_end":"September 30","lodging":110,"mie":68},{"id":196,"state":"MI","destination":"Traverse City","county":"Grand Traverse","season_begin":"October 1","season_end":"June 30","lodging":134,"mie":80},{"id":196,"state":"MI","destination":"Traverse City","county":"Grand Traverse","season_begin":"July 1","season_end":"August 31","lodging":235,"mie":80},{"id":196,"state":"MI","destination":"Traverse City","county":"Grand Traverse","season_begin":"September 1","season_end":"September 30","lodging":134,"mie":80},{"id":199,"state":"MN","destination":"Duluth","county":"St. Louis","season_begin":"October 1","season_end":"October 31","lodging":220,"mie":86},{"id":199,"state":"MN","destination":"Duluth","county":"St. Louis","season_begin":"November 1","season_end":"May 31","lodging":159,"mie":86},{"id":199,"state":"MN","destination":"Duluth","county":"St. Louis","season_begin":"June 1","season_end":"September 30","lodging":220,"mie":86},{"id":201,"state":"MN","destination":"Minneapolis / St. Paul","county":"Hennepin / Ramsey","season_begin":"","season_end":"","lodging":148,"mie":92},{"id":202,"state":"MN","destination":"Rochester","county":"Olmsted","season_begin":"","season_end":"","lodging":127,"mie":80},{"id":204,"state":"MO","destination":"Kansas City","county":"Jackson / Clay / Cass / Platte","season_begin":"","season_end":"","lodging":135,"mie":80},{"id":207,"state":"MO","destination":"St. Louis","county":"St. Louis / St. Louis City / St. Charles","season_begin":"","season_end":"","lodging":150,"mie":86},{"id":477,"state":"MS","destination":"Oxford","county":"Lafayette","season_begin":"","season_end":"","lodging":127,"mie":68},{"id":447,"state":"MS","destination":"Southaven","county":"Desoto","season_begin":"","season_end":"","lodging":126,"mie":68},{"id":211,"state":"MS","destination":"Starkville","county":"Oktibbeha","season_begin":"","season_end":"","lodging":125,"mie":68},{"id":215,"state":"MT","destination":"Big Sky / West Yellowstone/Gardiner","county":"Gallatin/Park","season_begin":"October 1","season_end":"May 31","lodging":176,"mie":80},{"id":215,"state":"MT","destination":"Big Sky / West Yellowstone/Gardiner","county":"Gallatin/Park","season_begin":"June 1","season_end":"September 30","lodging":310,"mie":80},{"id":426,"state":"MT","destination":"Helena","county":"Lewis and Clark","season_begin":"","season_end":"","lodging":132,"mie":74},{"id":496,"state":"MT","destination":"Kalispell/Whitefish","county":"Flathead","season_begin":"October 1","season_end":"June 30","lodging":124,"mie":80},{"id":496,"state":"MT","destination":"Kalispell/Whitefish","county":"Flathead","season_begin":"July 1","season_end":"September 30","lodging":232,"mie":80},{"id":213,"state":"MT","destination":"Missoula","county":"Missoula","season_begin":"October 1","season_end":"May 31","lodging":130,"mie":74},{"id":213,"state":"MT","destination":"Missoula","county":"Missoula","season_begin":"June 1","season_end":"September 30","lodging":195,"mie":74},{"id":216,"state":"NC","destination":"Asheville","county":"Buncombe","season_begin":"October 1","season_end":"December 31","lodging":141,"mie":80},{"id":216,"state":"NC","destination":"Asheville","county":"Buncombe","season_begin":"January 1","season_end":"September 30","lodging":120,"mie":80},{"id":217,"state":"NC","destination":"Atlantic Beach / Morehead City","county":"Carteret","season_begin":"October 1","season_end":"April 30","lodging":123,"mie":74},{"id":217,"state":"NC","destination":"Atlantic Beach / Morehead City","county":"Carteret","season_begin":"May 1","season_end":"August 31","lodging":178,"mie":74},{"id":217,"state":"NC","destination":"Atlantic Beach / Morehead City","county":"Carteret","season_begin":"September 1","season_end":"September 30","lodging":123,"mie":74},{"id":218,"state":"NC","destination":"Chapel Hill","county":"Orange","season_begin":"","season_end":"","lodging":140,"mie":80},{"id":219,"state":"NC","destination":"Charlotte","county":"Mecklenburg","season_begin":"","season_end":"","lodging":131,"mie":80},{"id":221,"state":"NC","destination":"Durham","county":"Durham","season_begin":"","season_end":"","lodging":121,"mie":74},{"id":464,"state":"NC","destination":"Fayetteville","county":"Cumberland","season_begin":"","season_end":"","lodging":124,"mie":68},{"id":222,"state":"NC","destination":"Greensboro","county":"Guilford","season_begin":"October 1","season_end":"October 31","lodging":123,"mie":74},{"id":222,"state":"NC","destination":"Greensboro","county":"Guilford","season_begin":"November 1","season_end":"February 28","lodging":112,"mie":74},{"id":222,"state":"NC","destination":"Greensboro","county":"Guilford","season_begin":"March 1","season_end":"September 30","lodging":123,"mie":74},{"id":224,"state":"NC","destination":"Kill Devil Hills","county":"Dare","season_begin":"October 1","season_end":"March 31","lodging":133,"mie":74},{"id":224,"state":"NC","destination":"Kill Devil Hills","county":"Dare","season_begin":"April 1","season_end":"May 31","lodging":190,"mie":74},{"id":224,"state":"NC","destination":"Kill Devil Hills","county":"Dare","season_begin":"June 1","season_end":"August 31","lodging":254,"mie":74},{"id":224,"state":"NC","destination":"Kill Devil Hills","county":"Dare","season_begin":"September 1","season_end":"September 30","lodging":133,"mie":74},{"id":227,"state":"NC","destination":"Raleigh","county":"Wake","season_begin":"","season_end":"","lodging":131,"mie":74},{"id":229,"state":"NC","destination":"Wilmington","county":"New Hanover","season_begin":"October 1","season_end":"October 31","lodging":147,"mie":74},{"id":229,"state":"NC","destination":"Wilmington","county":"New Hanover","season_begin":"November 1","season_end":"February 28","lodging":110,"mie":74},{"id":229,"state":"NC","destination":"Wilmington","county":"New Hanover","season_begin":"March 1","season_end":"September 30","lodging":147,"mie":74},{"id":231,"state":"NE","destination":"Omaha","county":"Douglas","season_begin":"","season_end":"","lodging":122,"mie":80},{"id":232,"state":"NH","destination":"Concord","county":"Merrimack","season_begin":"","season_end":"","lodging":124,"mie":74},{"id":233,"state":"NH","destination":"Conway","county":"Caroll","season_begin":"October 1","season_end":"February 28","lodging":144,"mie":80},{"id":233,"state":"NH","destination":"Conway","county":"Caroll","season_begin":"March 1","season_end":"June 30","lodging":118,"mie":80},{"id":233,"state":"NH","destination":"Conway","county":"Caroll","season_begin":"July 1","season_end":"August 31","lodging":161,"mie":80},{"id":233,"state":"NH","destination":"Conway","county":"Caroll","season_begin":"September 1","season_end":"September 30","lodging":144,"mie":80},{"id":234,"state":"NH","destination":"Durham","county":"Strafford","season_begin":"October 1","season_end":"June 30","lodging":125,"mie":74},{"id":234,"state":"NH","destination":"Durham","county":"Strafford","season_begin":"July 1","season_end":"August 31","lodging":152,"mie":74},{"id":234,"state":"NH","destination":"Durham","county":"Strafford","season_begin":"September 1","season_end":"September 30","lodging":125,"mie":74},{"id":235,"state":"NH","destination":"Laconia","county":"Belknap","season_begin":"October 1","season_end":"October 31","lodging":182,"mie":74},{"id":235,"state":"NH","destination":"Laconia","county":"Belknap","season_begin":"November 1","season_end":"May 31","lodging":140,"mie":74},{"id":235,"state":"NH","destination":"Laconia","county":"Belknap","season_begin":"June 1","season_end":"September 30","lodging":182,"mie":74},{"id":236,"state":"NH","destination":"Lebanon / Lincoln / West Lebanon","county":"Grafton","season_begin":"October 1","season_end":"October 31","lodging":177,"mie":74},{"id":236,"state":"NH","destination":"Lebanon / Lincoln / West Lebanon","county":"Grafton","season_begin":"November 1","season_end":"May 31","lodging":142,"mie":74},{"id":236,"state":"NH","destination":"Lebanon / Lincoln / West Lebanon","county":"Grafton","season_begin":"June 1","season_end":"September 30","lodging":177,"mie":74},{"id":237,"state":"NH","destination":"Manchester","county":"Hillsborough","season_begin":"","season_end":"","lodging":130,"mie":74},{"id":238,"state":"NH","destination":"Portsmouth","county":"Rockingham","season_begin":"October 1","season_end":"October 31","lodging":171,"mie":74},{"id":238,"state":"NH","destination":"Portsmouth","county":"Rockingham","season_begin":"November 1","season_end":"June 30","lodging":129,"mie":74},{"id":238,"state":"NH","destination":"Portsmouth","county":"Rockingham","season_begin":"July 1","season_end":"August 31","lodging":192,"mie":74},{"id":238,"state":"NH","destination":"Portsmouth","county":"Rockingham","season_begin":"September 1","season_end":"September 30","lodging":171,"mie":74},{"id":241,"state":"NJ","destination":"Cherry Hill / Moorestown","county":"Camden / Burlington","season_begin":"","season_end":"","lodging":112,"mie":80},{"id":242,"state":"NJ","destination":"Eatontown / Freehold","county":"Monmouth","season_begin":"","season_end":"","lodging":146,"mie":86},{"id":243,"state":"NJ","destination":"Edison / Piscataway","county":"Middlesex","season_begin":"","season_end":"","lodging":122,"mie":80},{"id":244,"state":"NJ","destination":"Flemington","county":"Hunterdon","season_begin":"","season_end":"","lodging":124,"mie":80},{"id":246,"state":"NJ","destination":"Newark","county":"Essex / Bergen / Hudson / Passaic","season_begin":"","season_end":"","lodging":156,"mie":86},{"id":247,"state":"NJ","destination":"Parsippany","county":"Morris","season_begin":"","season_end":"","lodging":143,"mie":80},{"id":249,"state":"NJ","destination":"Princeton / Trenton","county":"Mercer","season_begin":"","season_end":"","lodging":138,"mie":86},{"id":248,"state":"NJ","destination":"Somerset","county":"Somerset","season_begin":"","season_end":"","lodging":138,"mie":80},{"id":250,"state":"NJ","destination":"Springfield / Cranford / New Providence","county":"Union","season_begin":"","season_end":"","lodging":139,"mie":80},{"id":251,"state":"NJ","destination":"Toms River","county":"Ocean","season_begin":"October 1","season_end":"June 30","lodging":166,"mie":74},{"id":251,"state":"NJ","destination":"Toms River","county":"Ocean","season_begin":"July 1","season_end":"August 31","lodging":213,"mie":74},{"id":251,"state":"NJ","destination":"Toms River","county":"Ocean","season_begin":"September 1","season_end":"September 30","lodging":166,"mie":74},{"id":252,"state":"NM","destination":"Albuquerque","county":"Bernalillo","season_begin":"","season_end":"","lodging":144,"mie":80},{"id":479,"state":"NM","destination":"Carlsbad","county":"Eddy","season_begin":"","season_end":"","lodging":155,"mie":74},{"id":254,"state":"NM","destination":"Santa Fe","county":"Santa Fe","season_begin":"October 1","season_end":"October 31","lodging":167,"mie":80},{"id":254,"state":"NM","destination":"Santa Fe","county":"Santa Fe","season_begin":"November 1","season_end":"December 31","lodging":142,"mie":80},{"id":254,"state":"NM","destination":"Santa Fe","county":"Santa Fe","season_begin":"January 1","season_end":"February 28","lodging":122,"mie":80},{"id":254,"state":"NM","destination":"Santa Fe","county":"Santa Fe","season_begin":"March 1","season_end":"September 30","lodging":167,"mie":80},{"id":423,"state":"NM","destination":"Taos","county":"Taos","season_begin":"","season_end":"","lodging":128,"mie":74},{"id":255,"state":"NV","destination":"Incline Village / Reno / Sparks","county":"Washoe","season_begin":"October 1","season_end":"June 30","lodging":138,"mie":80},{"id":255,"state":"NV","destination":"Incline Village / Reno / Sparks","county":"Washoe","season_begin":"July 1","season_end":"August 31","lodging":184,"mie":80},{"id":255,"state":"NV","destination":"Incline Village / Reno / Sparks","county":"Washoe","season_begin":"September 1","season_end":"September 30","lodging":138,"mie":80},{"id":256,"state":"NV","destination":"Las Vegas","county":"Clark","season_begin":"October 1","season_end":"December 31","lodging":126,"mie":86},{"id":256,"state":"NV","destination":"Las Vegas","county":"Clark","season_begin":"January 1","season_end":"March 31","lodging":159,"mie":86},{"id":256,"state":"NV","destination":"Las Vegas","county":"Clark","season_begin":"April 1","season_end":"September 30","lodging":126,"mie":86},{"id":258,"state":"NY","destination":"Albany","county":"Albany","season_begin":"","season_end":"","lodging":117,"mie":86},{"id":269,"state":"NY","destination":"Binghamton","county":"Broome","season_begin":"","season_end":"","lodging":117,"mie":74},{"id":260,"state":"NY","destination":"Buffalo","county":"Erie","season_begin":"October 1","season_end":"June 30","lodging":126,"mie":80},{"id":260,"state":"NY","destination":"Buffalo","county":"Erie","season_begin":"July 1","season_end":"August 31","lodging":139,"mie":80},{"id":260,"state":"NY","destination":"Buffalo","county":"Erie","season_begin":"September 1","season_end":"September 30","lodging":126,"mie":80},{"id":261,"state":"NY","destination":"Floral Park / Garden City / Great Neck","county":"Nassau","season_begin":"","season_end":"","lodging":164,"mie":86},{"id":262,"state":"NY","destination":"Glens Falls","county":"Warren","season_begin":"October 1","season_end":"June 30","lodging":117,"mie":86},{"id":262,"state":"NY","destination":"Glens Falls","county":"Warren","season_begin":"July 1","season_end":"August 31","lodging":186,"mie":86},{"id":262,"state":"NY","destination":"Glens Falls","county":"Warren","season_begin":"September 1","season_end":"September 30","lodging":117,"mie":86},{"id":277,"state":"NY","destination":"Ithaca","county":"Tompkins","season_begin":"","season_end":"","lodging":144,"mie":80},{"id":264,"state":"NY","destination":"Kingston","county":"Ulster","season_begin":"","season_end":"","lodging":139,"mie":86},{"id":265,"state":"NY","destination":"Lake Placid","county":"Essex","season_begin":"October 1","season_end":"February 28","lodging":165,"mie":86},{"id":265,"state":"NY","destination":"Lake Placid","county":"Essex","season_begin":"March 1","season_end":"June 30","lodging":144,"mie":86},{"id":265,"state":"NY","destination":"Lake Placid","county":"Essex","season_begin":"July 1","season_end":"August 31","lodging":238,"mie":86},{"id":265,"state":"NY","destination":"Lake Placid","county":"Essex","season_begin":"September 1","season_end":"September 30","lodging":165,"mie":86},{"id":266,"state":"NY","destination":"New York City","county":"Bronx / Kings / New York / Queens / Richmond","season_begin":"October 1","season_end":"December 31","lodging":342,"mie":92},{"id":266,"state":"NY","destination":"New York City","county":"Bronx / Kings / New York / Queens / Richmond","season_begin":"January 1","season_end":"February 28","lodging":179,"mie":92},{"id":266,"state":"NY","destination":"New York City","county":"Bronx / Kings / New York / Queens / Richmond","season_begin":"March 1","season_end":"June 30","lodging":281,"mie":92},{"id":266,"state":"NY","destination":"New York City","county":"Bronx / Kings / New York / Queens / Richmond","season_begin":"July 1","season_end":"August 31","lodging":237,"mie":92},{"id":266,"state":"NY","destination":"New York City","county":"Bronx / Kings / New York / Queens / Richmond","season_begin":"September 1","season_end":"September 30","lodging":342,"mie":92},{"id":267,"state":"NY","destination":"Niagara Falls","county":"Niagara","season_begin":"October 1","season_end":"May 31","lodging":110,"mie":80},{"id":267,"state":"NY","destination":"Niagara Falls","county":"Niagara","season_begin":"June 1","season_end":"August 31","lodging":142,"mie":80},{"id":267,"state":"NY","destination":"Niagara Falls","county":"Niagara","season_begin":"September 1","season_end":"September 30","lodging":110,"mie":80},{"id":268,"state":"NY","destination":"Nyack / Palisades","county":"Rockland","season_begin":"","season_end":"","lodging":129,"mie":80},{"id":270,"state":"NY","destination":"Poughkeepsie","county":"Dutchess","season_begin":"","season_end":"","lodging":115,"mie":80},{"id":271,"state":"NY","destination":"Riverhead / Ronkonkoma / Melville","county":"Suffolk","season_begin":"","season_end":"","lodging":155,"mie":86},{"id":272,"state":"NY","destination":"Rochester","county":"Monroe","season_begin":"","season_end":"","lodging":132,"mie":80},{"id":273,"state":"NY","destination":"Saratoga Springs / Schenectady","county":"Saratoga / Schenectady","season_begin":"October 1","season_end":"June 30","lodging":126,"mie":80},{"id":273,"state":"NY","destination":"Saratoga Springs / Schenectady","county":"Saratoga / Schenectady","season_begin":"July 1","season_end":"August 31","lodging":214,"mie":80},{"id":273,"state":"NY","destination":"Saratoga Springs / Schenectady","county":"Saratoga / Schenectady","season_begin":"September 1","season_end":"September 30","lodging":126,"mie":80},{"id":274,"state":"NY","destination":"Syracuse / Oswego","county":"Onondaga / Oswego","season_begin":"","season_end":"","lodging":122,"mie":80},{"id":275,"state":"NY","destination":"Tarrytown / White Plains / New Rochelle","county":"Westchester","season_begin":"","season_end":"","lodging":161,"mie":92},{"id":276,"state":"NY","destination":"Troy","county":"Rensselaer","season_begin":"","season_end":"","lodging":121,"mie":80},{"id":278,"state":"NY","destination":"West Point","county":"Orange","season_begin":"","season_end":"","lodging":123,"mie":80},{"id":282,"state":"OH","destination":"Cincinnati","county":"Hamilton / Clermont","season_begin":"","season_end":"","lodging":163,"mie":86},{"id":283,"state":"OH","destination":"Cleveland","county":"Cuyahoga","season_begin":"","season_end":"","lodging":159,"mie":80},{"id":284,"state":"OH","destination":"Columbus","county":"Franklin","season_begin":"","season_end":"","lodging":131,"mie":80},{"id":285,"state":"OH","destination":"Dayton / Fairborn","county":"Greene / Montgomery","season_begin":"","season_end":"","lodging":115,"mie":74},{"id":287,"state":"OH","destination":"Hamilton","county":"Butler / Warren","season_begin":"","season_end":"","lodging":124,"mie":74},{"id":280,"state":"OH","destination":"Sandusky","county":"Erie","season_begin":"October 1","season_end":"November 30","lodging":116,"mie":68},{"id":280,"state":"OH","destination":"Sandusky","county":"Erie","season_begin":"December 1","season_end":"August 31","lodging":144,"mie":68},{"id":280,"state":"OH","destination":"Sandusky","county":"Erie","season_begin":"September 1","season_end":"September 30","lodging":116,"mie":68},{"id":295,"state":"OK","destination":"Oklahoma City","county":"Oklahoma","season_begin":"","season_end":"","lodging":116,"mie":80},{"id":298,"state":"OR","destination":"Beaverton","county":"Washington","season_begin":"","season_end":"","lodging":132,"mie":80},{"id":299,"state":"OR","destination":"Bend","county":"Deschutes","season_begin":"October 1","season_end":"May 31","lodging":125,"mie":86},{"id":299,"state":"OR","destination":"Bend","county":"Deschutes","season_begin":"June 1","season_end":"August 31","lodging":192,"mie":86},{"id":299,"state":"OR","destination":"Bend","county":"Deschutes","season_begin":"September 1","season_end":"September 30","lodging":125,"mie":86},{"id":300,"state":"OR","destination":"Clackamas","county":"Clackamas","season_begin":"","season_end":"","lodging":136,"mie":80},{"id":302,"state":"OR","destination":"Eugene / Florence","county":"Lane","season_begin":"October 1","season_end":"May 31","lodging":132,"mie":80},{"id":302,"state":"OR","destination":"Eugene / Florence","county":"Lane","season_begin":"June 1","season_end":"July 31","lodging":192,"mie":80},{"id":302,"state":"OR","destination":"Eugene / Florence","county":"Lane","season_begin":"August 1","season_end":"September 30","lodging":162,"mie":80},{"id":304,"state":"OR","destination":"Lincoln City","county":"Lincoln","season_begin":"October 1","season_end":"June 30","lodging":120,"mie":92},{"id":304,"state":"OR","destination":"Lincoln City","county":"Lincoln","season_begin":"July 1","season_end":"August 31","lodging":167,"mie":92},{"id":304,"state":"OR","destination":"Lincoln City","county":"Lincoln","season_begin":"September 1","season_end":"September 30","lodging":120,"mie":92},{"id":305,"state":"OR","destination":"Portland","county":"Multnomah","season_begin":"","season_end":"","lodging":155,"mie":86},{"id":306,"state":"OR","destination":"Seaside","county":"Clatsop","season_begin":"October 1","season_end":"June 30","lodging":141,"mie":86},{"id":306,"state":"OR","destination":"Seaside","county":"Clatsop","season_begin":"July 1","season_end":"August 31","lodging":236,"mie":86},{"id":306,"state":"OR","destination":"Seaside","county":"Clatsop","season_begin":"September 1","season_end":"September 30","lodging":141,"mie":86},{"id":307,"state":"PA","destination":"Allentown / Easton / Bethlehem","county":"Lehigh / Northampton","season_begin":"","season_end":"","lodging":115,"mie":74},{"id":313,"state":"PA","destination":"Bucks","county":"Bucks","season_begin":"","season_end":"","lodging":119,"mie":80},{"id":309,"state":"PA","destination":"Chester / Radnor / Essington","county":"Delaware","season_begin":"","season_end":"","lodging":127,"mie":80},{"id":311,"state":"PA","destination":"Gettysburg","county":"Adams","season_begin":"October 1","season_end":"October 31","lodging":122,"mie":68},{"id":311,"state":"PA","destination":"Gettysburg","county":"Adams","season_begin":"November 1","season_end":"March 31","lodging":110,"mie":68},{"id":311,"state":"PA","destination":"Gettysburg","county":"Adams","season_begin":"April 1","season_end":"September 30","lodging":122,"mie":68},{"id":312,"state":"PA","destination":"Harrisburg","county":"Dauphin County excluding Hershey","season_begin":"","season_end":"","lodging":124,"mie":74},{"id":489,"state":"PA","destination":"Hershey","county":"Hershey","season_begin":"October 1","season_end":"May 31","lodging":145,"mie":80},{"id":489,"state":"PA","destination":"Hershey","county":"Hershey","season_begin":"June 1","season_end":"August 31","lodging":196,"mie":80},{"id":489,"state":"PA","destination":"Hershey","county":"Hershey","season_begin":"September 1","season_end":"September 30","lodging":145,"mie":80},{"id":314,"state":"PA","destination":"Lancaster","county":"Lancaster","season_begin":"","season_end":"","lodging":123,"mie":74},{"id":315,"state":"PA","destination":"Malvern / Frazer / Berwyn","county":"Chester","season_begin":"","season_end":"","lodging":118,"mie":80},{"id":435,"state":"PA","destination":"Montgomery","county":"Montgomery","season_begin":"","season_end":"","lodging":126,"mie":80},{"id":317,"state":"PA","destination":"Philadelphia","county":"Philadelphia","season_begin":"October 1","season_end":"November 30","lodging":218,"mie":92},{"id":317,"state":"PA","destination":"Philadelphia","county":"Philadelphia","season_begin":"December 1","season_end":"March 31","lodging":156,"mie":92},{"id":317,"state":"PA","destination":"Philadelphia","county":"Philadelphia","season_begin":"April 1","season_end":"August 31","lodging":187,"mie":92},{"id":317,"state":"PA","destination":"Philadelphia","county":"Philadelphia","season_begin":"September 1","season_end":"September 30","lodging":218,"mie":92},{"id":318,"state":"PA","destination":"Pittsburgh","county":"Allegheny","season_begin":"","season_end":"","lodging":138,"mie":80},{"id":319,"state":"PA","destination":"Reading","county":"Berks","season_begin":"","season_end":"","lodging":117,"mie":74},{"id":321,"state":"PA","destination":"State College","county":"Centre","season_begin":"","season_end":"","lodging":124,"mie":74},{"id":323,"state":"RI","destination":"Jamestown / Middletown / Newport","county":"Newport","season_begin":"October 1","season_end":"October 31","lodging":218,"mie":80},{"id":323,"state":"RI","destination":"Jamestown / Middletown / Newport","county":"Newport","season_begin":"November 1","season_end":"May 31","lodging":141,"mie":80},{"id":323,"state":"RI","destination":"Jamestown / Middletown / Newport","county":"Newport","season_begin":"June 1","season_end":"August 31","lodging":268,"mie":80},{"id":323,"state":"RI","destination":"Jamestown / Middletown / Newport","county":"Newport","season_begin":"September 1","season_end":"September 30","lodging":218,"mie":80},{"id":325,"state":"RI","destination":"Providence / Bristol","county":"Providence / Bristol","season_begin":"","season_end":"","lodging":154,"mie":80},{"id":326,"state":"SC","destination":"Charleston","county":"Charleston / Berkeley / Dorchester","season_begin":"October 1","season_end":"October 31","lodging":244,"mie":92},{"id":326,"state":"SC","destination":"Charleston","county":"Charleston / Berkeley / Dorchester","season_begin":"November 1","season_end":"February 28","lodging":218,"mie":92},{"id":326,"state":"SC","destination":"Charleston","county":"Charleston / Berkeley / Dorchester","season_begin":"March 1","season_end":"May 31","lodging":288,"mie":92},{"id":326,"state":"SC","destination":"Charleston","county":"Charleston / Berkeley / Dorchester","season_begin":"June 1","season_end":"September 30","lodging":244,"mie":92},{"id":327,"state":"SC","destination":"Columbia","county":"Richland / Lexington","season_begin":"","season_end":"","lodging":115,"mie":74},{"id":329,"state":"SC","destination":"Hilton Head","county":"Beaufort","season_begin":"October 1","season_end":"October 31","lodging":163,"mie":80},{"id":329,"state":"SC","destination":"Hilton Head","county":"Beaufort","season_begin":"November 1","season_end":"February 28","lodging":118,"mie":80},{"id":329,"state":"SC","destination":"Hilton Head","county":"Beaufort","season_begin":"March 1","season_end":"May 31","lodging":193,"mie":80},{"id":329,"state":"SC","destination":"Hilton Head","county":"Beaufort","season_begin":"June 1","season_end":"August 31","lodging":215,"mie":80},{"id":329,"state":"SC","destination":"Hilton Head","county":"Beaufort","season_begin":"September 1","season_end":"September 30","lodging":163,"mie":80},{"id":330,"state":"SC","destination":"Myrtle Beach","county":"Horry","season_begin":"October 1","season_end":"March 31","lodging":110,"mie":74},{"id":330,"state":"SC","destination":"Myrtle Beach","county":"Horry","season_begin":"April 1","season_end":"May 31","lodging":132,"mie":74},{"id":330,"state":"SC","destination":"Myrtle Beach","county":"Horry","season_begin":"June 1","season_end":"August 31","lodging":182,"mie":74},{"id":330,"state":"SC","destination":"Myrtle Beach","county":"Horry","season_begin":"September 1","season_end":"September 30","lodging":110,"mie":74},{"id":334,"state":"SD","destination":"Deadwood / Spearfish","county":"Lawrence","season_begin":"October 1","season_end":"October 31","lodging":140,"mie":80},{"id":334,"state":"SD","destination":"Deadwood / Spearfish","county":"Lawrence","season_begin":"November 1","season_end":"April 30","lodging":110,"mie":80},{"id":334,"state":"SD","destination":"Deadwood / Spearfish","county":"Lawrence","season_begin":"May 1","season_end":"September 30","lodging":140,"mie":80},{"id":332,"state":"SD","destination":"Hot Springs","county":"Fall River / Custer","season_begin":"October 1","season_end":"May 31","lodging":110,"mie":74},{"id":332,"state":"SD","destination":"Hot Springs","county":"Fall River / Custer","season_begin":"June 1","season_end":"September 30","lodging":161,"mie":74},{"id":333,"state":"SD","destination":"Rapid City","county":"Pennington","season_begin":"October 1","season_end":"May 31","lodging":110,"mie":74},{"id":333,"state":"SD","destination":"Rapid City","county":"Pennington","season_begin":"June 1","season_end":"August 31","lodging":158,"mie":74},{"id":333,"state":"SD","destination":"Rapid City","county":"Pennington","season_begin":"September 1","season_end":"September 30","lodging":110,"mie":74},{"id":335,"state":"TN","destination":"Brentwood / Franklin","county":"Williamson","season_begin":"","season_end":"","lodging":130,"mie":86},{"id":336,"state":"TN","destination":"Chattanooga","county":"Hamilton","season_begin":"","season_end":"","lodging":117,"mie":74},{"id":338,"state":"TN","destination":"Knoxville","county":"Knox","season_begin":"","season_end":"","lodging":119,"mie":74},{"id":339,"state":"TN","destination":"Memphis","county":"Shelby","season_begin":"","season_end":"","lodging":129,"mie":74},{"id":340,"state":"TN","destination":"Nashville","county":"Davidson","season_begin":"October 1","season_end":"October 31","lodging":248,"mie":86},{"id":340,"state":"TN","destination":"Nashville","county":"Davidson","season_begin":"November 1","season_end":"August 31","lodging":217,"mie":86},{"id":340,"state":"TN","destination":"Nashville","county":"Davidson","season_begin":"September 1","season_end":"September 30","lodging":248,"mie":86},{"id":342,"state":"TX","destination":"Arlington / Fort Worth / Grapevine","county":"Tarrant County / City of Grapevine","season_begin":"","season_end":"","lodging":181,"mie":80},{"id":343,"state":"TX","destination":"Austin","county":"Travis","season_begin":"October 1","season_end":"December 31","lodging":173,"mie":80},{"id":343,"state":"TX","destination":"Austin","county":"Travis","season_begin":"January 1","season_end":"March 31","lodging":187,"mie":80},{"id":343,"state":"TX","destination":"Austin","county":"Travis","season_begin":"April 1","season_end":"September 30","lodging":173,"mie":80},{"id":486,"state":"TX","destination":"Big Spring","county":"Howard","season_begin":"","season_end":"","lodging":114,"mie":68},{"id":346,"state":"TX","destination":"Dallas","county":"Dallas","season_begin":"October 1","season_end":"December 31","lodging":170,"mie":80},{"id":346,"state":"TX","destination":"Dallas","county":"Dallas","season_begin":"January 1","season_end":"March 31","lodging":191,"mie":80},{"id":346,"state":"TX","destination":"Dallas","county":"Dallas","season_begin":"April 1","season_end":"September 30","lodging":170,"mie":80},{"id":348,"state":"TX","destination":"Galveston","county":"Galveston","season_begin":"October 1","season_end":"May 31","lodging":111,"mie":74},{"id":348,"state":"TX","destination":"Galveston","county":"Galveston","season_begin":"June 1","season_end":"July 31","lodging":146,"mie":74},{"id":348,"state":"TX","destination":"Galveston","county":"Galveston","season_begin":"August 1","season_end":"September 30","lodging":111,"mie":74},{"id":350,"state":"TX","destination":"Houston","county":"Montgomery / Fort Bend / Harris","season_begin":"","season_end":"","lodging":128,"mie":80},{"id":471,"state":"TX","destination":"Midland / Odessa","county":"Midland / Andrews / Ector / Martin","season_begin":"October 1","season_end":"October 31","lodging":132,"mie":74},{"id":471,"state":"TX","destination":"Midland / Odessa","county":"Midland / Andrews / Ector / Martin","season_begin":"November 1","season_end":"January 31","lodging":118,"mie":74},{"id":471,"state":"TX","destination":"Midland / Odessa","county":"Midland / Andrews / Ector / Martin","season_begin":"February 1","season_end":"September 30","lodging":132,"mie":74},{"id":492,"state":"TX","destination":"Pecos","county":"Reeves","season_begin":"","season_end":"","lodging":121,"mie":74},{"id":354,"state":"TX","destination":"Plano","county":"Collin","season_begin":"","season_end":"","lodging":123,"mie":80},{"id":356,"state":"TX","destination":"San Antonio","county":"Bexar","season_begin":"October 1","season_end":"January 31","lodging":137,"mie":74},{"id":356,"state":"TX","destination":"San Antonio","county":"Bexar","season_begin":"February 1","season_end":"March 31","lodging":161,"mie":74},{"id":356,"state":"TX","destination":"San Antonio","county":"Bexar","season_begin":"April 1","season_end":"September 30","lodging":137,"mie":74},{"id":357,"state":"TX","destination":"South Padre Island","county":"Cameron","season_begin":"October 1","season_end":"February 28","lodging":118,"mie":74},{"id":357,"state":"TX","destination":"South Padre Island","county":"Cameron","season_begin":"March 1","season_end":"July 31","lodging":140,"mie":74},{"id":357,"state":"TX","destination":"South Padre Island","county":"Cameron","season_begin":"August 1","season_end":"September 30","lodging":118,"mie":74},{"id":474,"state":"UT","destination":"Moab","county":"Grand","season_begin":"October 1","season_end":"October 31","lodging":221,"mie":86},{"id":474,"state":"UT","destination":"Moab","county":"Grand","season_begin":"November 1","season_end":"February 28","lodging":110,"mie":86},{"id":474,"state":"UT","destination":"Moab","county":"Grand","season_begin":"March 1","season_end":"June 30","lodging":212,"mie":86},{"id":474,"state":"UT","destination":"Moab","county":"Grand","season_begin":"July 1","season_end":"August 31","lodging":166,"mie":86},{"id":474,"state":"UT","destination":"Moab","county":"Grand","season_begin":"September 1","season_end":"September 30","lodging":221,"mie":86},{"id":360,"state":"UT","destination":"Park City","county":"Summit","season_begin":"October 1","season_end":"November 30","lodging":221,"mie":92},{"id":360,"state":"UT","destination":"Park City","county":"Summit","season_begin":"December 1","season_end":"March 31","lodging":483,"mie":92},{"id":360,"state":"UT","destination":"Park City","county":"Summit","season_begin":"April 1","season_end":"September 30","lodging":221,"mie":92},{"id":361,"state":"UT","destination":"Provo","county":"Utah","season_begin":"","season_end":"","lodging":117,"mie":74},{"id":362,"state":"UT","destination":"Salt Lake City","county":"Salt Lake / Tooele","season_begin":"","season_end":"","lodging":142,"mie":80},{"id":459,"state":"VA","destination":"Blacksburg","county":"Montgomery","season_begin":"","season_end":"","lodging":122,"mie":68},{"id":363,"state":"VA","destination":"Charlottesville","county":"City of Charlottesville / Albemarle","season_begin":"","season_end":"","lodging":136,"mie":80},{"id":428,"state":"VA","destination":"Loudoun","county":"Loudoun","season_begin":"","season_end":"","lodging":115,"mie":80},{"id":365,"state":"VA","destination":"Lynchburg","county":"Campbell / Lynchburg City","season_begin":"October 1","season_end":"May 31","lodging":115,"mie":68},{"id":365,"state":"VA","destination":"Lynchburg","county":"Campbell / Lynchburg City","season_begin":"June 1","season_end":"July 31","lodging":110,"mie":68},{"id":365,"state":"VA","destination":"Lynchburg","county":"Campbell / Lynchburg City","season_begin":"August 1","season_end":"September 30","lodging":115,"mie":68},{"id":368,"state":"VA","destination":"Richmond","county":"City of Richmond","season_begin":"","season_end":"","lodging":157,"mie":80},{"id":369,"state":"VA","destination":"Roanoke","county":"City limits of Roanoke","season_begin":"","season_end":"","lodging":119,"mie":74},{"id":371,"state":"VA","destination":"Virginia Beach","county":"City of Virginia Beach","season_begin":"October 1","season_end":"May 31","lodging":124,"mie":74},{"id":371,"state":"VA","destination":"Virginia Beach","county":"City of Virginia Beach","season_begin":"June 1","season_end":"August 31","lodging":210,"mie":74},{"id":371,"state":"VA","destination":"Virginia Beach","county":"City of Virginia Beach","season_begin":"September 1","season_end":"September 30","lodging":124,"mie":74},{"id":372,"state":"VA","destination":"Wallops Island","county":"Accomack","season_begin":"October 1","season_end":"June 30","lodging":131,"mie":68},{"id":372,"state":"VA","destination":"Wallops Island","county":"Accomack","season_begin":"July 1","season_end":"August 31","lodging":248,"mie":68},{"id":372,"state":"VA","destination":"Wallops Island","county":"Accomack","season_begin":"September 1","season_end":"September 30","lodging":131,"mie":68},{"id":374,"state":"VA","destination":"Williamsburg / York","county":"James City / York Counties / City of Williamsburg","season_begin":"October 1","season_end":"December 31","lodging":115,"mie":80},{"id":374,"state":"VA","destination":"Williamsburg / York","county":"James City / York Counties / City of Williamsburg","season_begin":"January 1","season_end":"March 31","lodging":110,"mie":80},{"id":374,"state":"VA","destination":"Williamsburg / York","county":"James City / York Counties / City of Williamsburg","season_begin":"April 1","season_end":"August 31","lodging":134,"mie":80},{"id":374,"state":"VA","destination":"Williamsburg / York","county":"James City / York Counties / City of Williamsburg","season_begin":"September 1","season_end":"September 30","lodging":115,"mie":80},{"id":377,"state":"VT","destination":"Burlington","county":"Chittenden","season_begin":"October 1","season_end":"October 31","lodging":202,"mie":86},{"id":377,"state":"VT","destination":"Burlington","county":"Chittenden","season_begin":"November 1","season_end":"April 30","lodging":128,"mie":86},{"id":377,"state":"VT","destination":"Burlington","county":"Chittenden","season_begin":"May 1","season_end":"September 30","lodging":202,"mie":86},{"id":378,"state":"VT","destination":"Manchester","county":"Bennington","season_begin":"October 1","season_end":"October 31","lodging":220,"mie":86},{"id":378,"state":"VT","destination":"Manchester","county":"Bennington","season_begin":"November 1","season_end":"July 31","lodging":168,"mie":86},{"id":378,"state":"VT","destination":"Manchester","county":"Bennington","season_begin":"August 1","season_end":"September 30","lodging":220,"mie":86},{"id":379,"state":"VT","destination":"Montpelier","county":"Washington","season_begin":"October 1","season_end":"October 31","lodging":227,"mie":74},{"id":379,"state":"VT","destination":"Montpelier","county":"Washington","season_begin":"November 1","season_end":"July 31","lodging":167,"mie":74},{"id":379,"state":"VT","destination":"Montpelier","county":"Washington","season_begin":"August 1","season_end":"September 30","lodging":227,"mie":74},{"id":380,"state":"VT","destination":"Stowe","county":"Lamoille","season_begin":"October 1","season_end":"February 28","lodging":185,"mie":86},{"id":380,"state":"VT","destination":"Stowe","county":"Lamoille","season_begin":"March 1","season_end":"May 31","lodging":148,"mie":86},{"id":380,"state":"VT","destination":"Stowe","county":"Lamoille","season_begin":"June 1","season_end":"September 30","lodging":185,"mie":86},{"id":381,"state":"VT","destination":"White River Junction","county":"Windsor","season_begin":"","season_end":"","lodging":144,"mie":86},{"id":384,"state":"WA","destination":"Everett / Lynnwood","county":"Snohomish","season_begin":"October 1","season_end":"May 31","lodging":113,"mie":86},{"id":384,"state":"WA","destination":"Everett / Lynnwood","county":"Snohomish","season_begin":"June 1","season_end":"August 31","lodging":140,"mie":86},{"id":384,"state":"WA","destination":"Everett / Lynnwood","county":"Snohomish","season_begin":"September 1","season_end":"September 30","lodging":113,"mie":86},{"id":385,"state":"WA","destination":"Ocean Shores","county":"Grays Harbor","season_begin":"October 1","season_end":"June 30","lodging":110,"mie":86},{"id":385,"state":"WA","destination":"Ocean Shores","county":"Grays Harbor","season_begin":"July 1","season_end":"August 31","lodging":132,"mie":86},{"id":385,"state":"WA","destination":"Ocean Shores","county":"Grays Harbor","season_begin":"September 1","season_end":"September 30","lodging":110,"mie":86},{"id":386,"state":"WA","destination":"Olympia / Tumwater","county":"Thurston","season_begin":"October 1","season_end":"November 30","lodging":128,"mie":80},{"id":386,"state":"WA","destination":"Olympia / Tumwater","county":"Thurston","season_begin":"December 1","season_end":"June 30","lodging":151,"mie":80},{"id":386,"state":"WA","destination":"Olympia / Tumwater","county":"Thurston","season_begin":"July 1","season_end":"August 31","lodging":175,"mie":80},{"id":386,"state":"WA","destination":"Olympia / Tumwater","county":"Thurston","season_begin":"September 1","season_end":"September 30","lodging":128,"mie":80},{"id":387,"state":"WA","destination":"Port Angeles / Port Townsend","county":"Clallam / Jefferson","season_begin":"October 1","season_end":"June 30","lodging":137,"mie":92},{"id":387,"state":"WA","destination":"Port Angeles / Port Townsend","county":"Clallam / Jefferson","season_begin":"July 1","season_end":"August 31","lodging":235,"mie":92},{"id":387,"state":"WA","destination":"Port Angeles / Port Townsend","county":"Clallam / Jefferson","season_begin":"September 1","season_end":"September 30","lodging":137,"mie":92},{"id":475,"state":"WA","destination":"Richland / Pasco","county":"Benton / Franklin","season_begin":"","season_end":"","lodging":130,"mie":86},{"id":389,"state":"WA","destination":"Seattle","county":"King","season_begin":"October 1","season_end":"May 31","lodging":188,"mie":92},{"id":389,"state":"WA","destination":"Seattle","county":"King","season_begin":"June 1","season_end":"September 30","lodging":248,"mie":92},{"id":390,"state":"WA","destination":"Spokane","county":"Spokane","season_begin":"","season_end":"","lodging":126,"mie":86},{"id":391,"state":"WA","destination":"Tacoma","county":"Pierce","season_begin":"","season_end":"","lodging":136,"mie":86},{"id":392,"state":"WA","destination":"Vancouver","county":"Clark / Cowlitz / Skamania","season_begin":"","season_end":"","lodging":155,"mie":86},{"id":396,"state":"WI","destination":"Madison","county":"Dane","season_begin":"October 1","season_end":"October 31","lodging":138,"mie":80},{"id":396,"state":"WI","destination":"Madison","county":"Dane","season_begin":"November 1","season_end":"April 30","lodging":110,"mie":80},{"id":396,"state":"WI","destination":"Madison","county":"Dane","season_begin":"May 1","season_end":"September 30","lodging":138,"mie":80},{"id":397,"state":"WI","destination":"Milwaukee","county":"Milwaukee","season_begin":"","season_end":"","lodging":140,"mie":80},{"id":400,"state":"WI","destination":"Sturgeon Bay","county":"Door","season_begin":"October 1","season_end":"October 31","lodging":133,"mie":80},{"id":400,"state":"WI","destination":"Sturgeon Bay","county":"Door","season_begin":"November 1","season_end":"May 31","lodging":110,"mie":80},{"id":400,"state":"WI","destination":"Sturgeon Bay","county":"Door","season_begin":"June 1","season_end":"September 30","lodging":133,"mie":80},{"id":406,"state":"WV","destination":"Charles Town","county":"Jefferson","season_begin":"","season_end":"","lodging":122,"mie":68},{"id":403,"state":"WV","destination":"Charleston","county":"Kanawha","season_begin":"","season_end":"","lodging":115,"mie":68},{"id":408,"state":"WY","destination":"Cody","county":"Park","season_begin":"October 1","season_end":"May 31","lodging":127,"mie":74},{"id":408,"state":"WY","destination":"Cody","county":"Park","season_begin":"June 1","season_end":"September 30","lodging":190,"mie":74},{"id":409,"state":"WY","destination":"Jackson / Pinedale","county":"Teton / Sublette","season_begin":"October 1","season_end":"May 31","lodging":212,"mie":92},{"id":409,"state":"WY","destination":"Jackson / Pinedale","county":"Teton / Sublette","season_begin":"June 1","season_end":"September 30","lodging":420,"mie":92}];
+
+const STANDARD_MIE = 68;
+const STANDARD_LODGING = 110;
+const TRAVEL_DAY_PCT = 0.75;
+
+let state = {
+  mie: null,
+  lodging: null,
+  location: null,
+  expenses: [],
+  isTravelDay: false,
+  selectedDate: new Date(),
+  lastCity: null,
+  lastCounty: null,
+  lastStateAbbr: null,
+};
+
+// --- Date helpers ---
+const MONTHS = {
+  'january':0,'february':1,'march':2,'april':3,'may':4,'june':5,
+  'july':6,'august':7,'september':8,'october':9,'november':10,'december':11
+};
+
+function parseSeasonDate(str, year) {
+  if (!str) return null;
+  const parts = str.trim().toLowerCase().split(' ');
+  if (parts.length < 2) return null;
+  const m = MONTHS[parts[0]];
+  const d = parseInt(parts[1]);
+  if (m === undefined || isNaN(d)) return null;
+  return new Date(year, m, d);
+}
+
+function isInSeason(begin, end, date) {
+  if (!begin && !end) return true; // no season = year-round
+  const year = date.getFullYear();
+  let s = parseSeasonDate(begin, year);
+  let e = parseSeasonDate(end, year);
+  if (!s || !e) return true;
+  // Handle cross-year seasons (e.g. Oct 1 – Feb 28)
+  if (e < s) {
+    // season spans new year
+    const eNext = parseSeasonDate(end, year + 1);
+    const sPrev = parseSeasonDate(begin, year - 1);
+    return (date >= s) || (date <= e) || (date >= sPrev && date <= eNext);
+  }
+  // Add 1 day to end to make inclusive
+  const endInclusive = new Date(e.getTime() + 86400000);
+  return date >= s && date < endInclusive;
+}
+
+function lookupRates(stateAbbr, countyName, cityName, targetDate) {
+  const d = targetDate || new Date();
+  const stateUp = (stateAbbr || '').toUpperCase().trim();
+  const countyLow = (countyName || '').toLowerCase().trim();
+  const cityLow = (cityName || '').toLowerCase().trim();
+
+  // Filter by state
+  const stateRecords = PER_DIEM_DATA.filter(r => r.state === stateUp);
+  if (!stateRecords.length) return null;
+
+  // Try county match first (most precise)
+  if (countyLow) {
+    for (const r of stateRecords) {
+      const rCounty = r.county.toLowerCase();
+      if (rCounty.split('/').some(c => c.trim() === countyLow) ||
+          rCounty.includes(countyLow)) {
+        if (isInSeason(r.season_begin, r.season_end, d)) {
+          return { mie: r.mie, lodging: r.lodging, destination: r.destination, matched: 'county' };
+        }
+      }
+    }
+  }
+
+  // Try city/destination match
+  if (cityLow) {
+    for (const r of stateRecords) {
+      const destLow = r.destination.toLowerCase();
+      if (destLow.split('/').some(c => c.trim() === cityLow) ||
+          destLow.includes(cityLow) || cityLow.includes(destLow.split('/')[0].trim())) {
+        if (isInSeason(r.season_begin, r.season_end, d)) {
+          return { mie: r.mie, lodging: r.lodging, destination: r.destination, matched: 'city' };
+        }
+      }
+    }
+  }
+
+  return null; // will fall back to standard CONUS
+}
+
+// --- UI helpers ---
+function formatMoney(n) {
+  return '$' + Math.abs(n).toFixed(2);
+}
+
+function setRates(mie, lodging, destination) {
+  state.mie = mie;
+  state.lodging = lodging;
+  state.location = destination;
+  renderRateDisplay();
+  renderSummary();
+}
+
+function renderRateDisplay() {
+  const el = document.getElementById('rate-display');
+  if (state.mie === null) {
+    el.innerHTML = '<div class="no-rate-msg">Search a location above to load per diem rates</div>';
+    return;
+  }
+  const effectiveMIE = state.isTravelDay ? Math.round(state.mie * TRAVEL_DAY_PCT * 100) / 100 : state.mie;
+  el.innerHTML = `
+    <div class="rate-location">
+      <span class="loc-icon">&#128205;</span>
+      <span class="loc-name">${state.location || 'Unknown Location'}</span>
+    </div>
+    <div class="rate-grid">
+      <div class="rate-item">
+        <div class="rate-label">Lodging</div>
+        <div class="rate-value">$${state.lodging}</div>
+        <div class="rate-note">per night</div>
+      </div>
+      <div class="rate-item highlight">
+        <div class="rate-label">M&amp;IE Rate</div>
+        <div class="rate-value blue">$${state.mie}</div>
+        <div class="rate-note">meals &amp; incidentals</div>
+      </div>
+      ${state.isTravelDay ? `
+      <div class="rate-item" style="grid-column:1/-1;background:var(--orange-light)">
+        <div class="rate-label" style="color:var(--orange)">&#9992; Travel Day (75%)</div>
+        <div class="rate-value" style="color:var(--orange);font-size:32px">$${effectiveMIE.toFixed(0)}</div>
+        <div class="rate-note" style="color:var(--orange)">effective M&amp;IE for today</div>
+      </div>` : ''}
+    </div>
+  `;
+}
+
+function renderExpenseList() {
+  const el = document.getElementById('expense-list');
+  if (!state.expenses.length) {
+    el.innerHTML = `<div class="expense-empty">
+      <span class="empty-icon">&#127860;</span>
+      No expenses yet &mdash; add your first one above
+    </div>`;
+    return;
+  }
+  el.innerHTML = state.expenses.map((exp, i) => `
+    <div class="expense-item" id="exp-${i}">
+      <div class="expense-num">${i + 1}</div>
+      <div class="expense-desc">${escHtml(exp.desc) || '<em style="color:var(--gray-400)">No description</em>'}</div>
+      <div class="expense-amount">${formatMoney(exp.amount)}</div>
+      <button class="expense-delete" onclick="deleteExpense(${i})" aria-label="Delete">&#10005;</button>
+    </div>
+  `).join('');
+}
+
+function renderSummary() {
+  const totalSpent = state.expenses.reduce((s, e) => s + e.amount, 0);
+  const effectiveMIE = state.mie !== null
+    ? (state.isTravelDay ? state.mie * TRAVEL_DAY_PCT : state.mie)
+    : null;
+
+  document.getElementById('footer-spent').textContent = formatMoney(totalSpent);
+  document.getElementById('footer-rate').textContent = effectiveMIE !== null
+    ? formatMoney(effectiveMIE) + (state.isTravelDay ? ' (75%)' : '')
+    : '—';
+
+  const balRow = document.getElementById('balance-row');
+  const balAmount = document.getElementById('balance-amount');
+  const balLabel = document.getElementById('balance-label');
+  const balIcon = document.getElementById('balance-icon');
+
+  if (effectiveMIE === null) {
+    balRow.className = 'balance-row even';
+    balAmount.textContent = '—';
+    balLabel.textContent = 'Set location for balance';
+    balIcon.textContent = '—';
+    return;
+  }
+
+  const remaining = effectiveMIE - totalSpent;
+  if (remaining > 0) {
+    balRow.className = 'balance-row under';
+    balAmount.textContent = formatMoney(remaining) + ' left';
+    balLabel.textContent = 'Under Budget';
+    balIcon.textContent = '✅';
+  } else if (remaining < 0) {
+    balRow.className = 'balance-row over';
+    balAmount.textContent = formatMoney(remaining) + ' over';
+    balLabel.textContent = 'Over Per Diem';
+    balIcon.textContent = '🚨';
+  } else {
+    balRow.className = 'balance-row even';
+    balAmount.textContent = '$0.00';
+    balLabel.textContent = 'Exactly at Limit';
+    balIcon.textContent = '✔️';
+  }
+}
+
+function escHtml(s) {
+  return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// --- Actions ---
+function addExpense() {
+  const desc = document.getElementById('expense-desc').value.trim();
+  const raw = document.getElementById('expense-amount').value;
+  const amount = parseFloat(raw);
+  if (isNaN(amount) || amount <= 0) {
+    document.getElementById('expense-amount').focus();
+    document.getElementById('expense-amount').style.borderColor = 'var(--red)';
+    setTimeout(() => document.getElementById('expense-amount').style.borderColor = '', 1200);
+    return;
+  }
+  state.expenses.push({ desc, amount });
+  document.getElementById('expense-desc').value = '';
+  document.getElementById('expense-amount').value = '';
+  document.getElementById('expense-desc').focus();
+  renderExpenseList();
+  renderSummary();
+}
+
+function deleteExpense(i) {
+  state.expenses.splice(i, 1);
+  renderExpenseList();
+  renderSummary();
+}
+
+function clearAll() {
+  if (state.expenses.length === 0) return;
+  if (confirm('Clear all expenses for today?')) {
+    state.expenses = [];
+    renderExpenseList();
+    renderSummary();
+  }
+}
+
+// --- Travel day toggle ---
+document.getElementById('travel-toggle').addEventListener('change', function() {
+  state.isTravelDay = this.checked;
+  const effect = document.getElementById('travel-effect');
+  const label = document.getElementById('toggle-label');
+  if (this.checked) {
+    effect.classList.add('visible');
+    label.textContent = 'Yes — Travel Day (75%)';
+  } else {
+    effect.classList.remove('visible');
+    label.textContent = 'No — Full Per Diem';
+  }
+  renderRateDisplay();
+  renderSummary();
+});
+
+// --- Enter key support ---
+document.getElementById('expense-desc').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') document.getElementById('expense-amount').focus();
+});
+document.getElementById('expense-amount').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') addExpense();
+});
+
+// --- Nominatim Geocoding (OpenStreetMap) ---
+// Full state name → 2-letter abbreviation map
+const STATE_ABBR = {
+  'alabama':'AL','alaska':'AK','arizona':'AZ','arkansas':'AR','california':'CA',
+  'colorado':'CO','connecticut':'CT','delaware':'DE','florida':'FL','georgia':'GA',
+  'hawaii':'HI','idaho':'ID','illinois':'IL','indiana':'IN','iowa':'IA',
+  'kansas':'KS','kentucky':'KY','louisiana':'LA','maine':'ME','maryland':'MD',
+  'massachusetts':'MA','michigan':'MI','minnesota':'MN','mississippi':'MS',
+  'missouri':'MO','montana':'MT','nebraska':'NE','nevada':'NV','new hampshire':'NH',
+  'new jersey':'NJ','new mexico':'NM','new york':'NY','north carolina':'NC',
+  'north dakota':'ND','ohio':'OH','oklahoma':'OK','oregon':'OR','pennsylvania':'PA',
+  'rhode island':'RI','south carolina':'SC','south dakota':'SD','tennessee':'TN',
+  'texas':'TX','utah':'UT','vermont':'VT','virginia':'VA','washington':'WA',
+  'west virginia':'WV','wisconsin':'WI','wyoming':'WY',
+  'district of columbia':'DC','washington dc':'DC','washington d.c.':'DC'
+};
+
+const input = document.getElementById('location-input');
+const dropdown = document.getElementById('ac-dropdown');
+let debounceTimer = null;
+let lastQuery = '';
+
+function closeDropdown() {
+  dropdown.classList.remove('open');
+  dropdown.innerHTML = '';
+}
+
+function showDropdownItem(html) {
+  dropdown.innerHTML = html;
+  dropdown.classList.add('open');
+}
+
+async function searchNominatim(query) {
+  if (query.length < 2) { closeDropdown(); return; }
+  if (query === lastQuery) return;
+  lastQuery = query;
+
+  showDropdownItem('<div class="autocomplete-searching">Searching…</div>');
+
+  const url = 'https://nominatim.openstreetmap.org/search?' + new URLSearchParams({
+    q: query,
+    countrycodes: 'us',
+    format: 'json',
+    addressdetails: '1',
+    limit: '6',
+    featuretype: 'city',
+  });
+
+  let results;
+  try {
+    const res = await fetch(url, {
+      headers: { 'Accept-Language': 'en-US,en', 'User-Agent': 'PerDiemTracker/1.0' }
+    });
+    results = await res.json();
+  } catch (e) {
+    showDropdownItem('<div class="autocomplete-searching">Network error — check connection</div>');
+    return;
+  }
+
+  if (!results.length) {
+    showDropdownItem('<div class="autocomplete-searching">No US cities found</div>');
+    return;
+  }
+
+  dropdown.innerHTML = results.map((r, i) => {
+    const addr = r.address || {};
+    const city = addr.city || addr.town || addr.village || addr.hamlet || addr.county || r.name || '';
+    const county = (addr.county || '').replace(/ County$| Parish$| Borough$| Census Area$/i, '').trim();
+    const stateName = (addr.state || '').toLowerCase();
+    const stateAbbr = STATE_ABBR[stateName] || '';
+    const detail = [county, addr.state].filter(Boolean).join(', ');
+    return `<div class="autocomplete-item" data-idx="${i}"
+      data-city="${escHtml(city)}"
+      data-county="${escHtml(county)}"
+      data-state="${escHtml(stateAbbr)}"
+      data-display="${escHtml(city + (detail ? ', ' + detail : ''))}">
+      <span class="ac-city">${escHtml(city)}${stateAbbr ? ', ' + stateAbbr : ''}</span>
+      <span class="ac-detail">${escHtml(county ? county + ' County' : '')}${addr.state ? ' · ' + addr.state : ''}</span>
+    </div>`;
+  }).join('');
+  dropdown.classList.add('open');
+
+  dropdown.querySelectorAll('.autocomplete-item').forEach(el => {
+    el.addEventListener('click', () => selectResult(el));
+    el.addEventListener('touchend', (e) => { e.preventDefault(); selectResult(el); });
+  });
+}
+
+function selectResult(el) {
+  const city = el.dataset.city;
+  const county = el.dataset.county;
+  const stateAbbr = el.dataset.state;
+  const display = el.dataset.display;
+
+  input.value = display;
+  closeDropdown();
+  input.blur();
+
+  state.lastCity = city;
+  state.lastCounty = county;
+  state.lastStateAbbr = stateAbbr;
+
+  applyRateForCurrentDate();
+}
+
+function applyRateForCurrentDate() {
+  const { lastCity: city, lastCounty: county, lastStateAbbr: stateAbbr, selectedDate } = state;
+  if (!stateAbbr) return;
+  const result = lookupRates(stateAbbr, county, city, selectedDate);
+  if (result) {
+    setRates(result.mie, result.lodging, result.destination + ', ' + stateAbbr);
+  } else {
+    setRates(STANDARD_MIE, STANDARD_LODGING, (city || county) + ', ' + stateAbbr + ' (Standard CONUS)');
+  }
+}
+
+input.addEventListener('input', function() {
+  clearTimeout(debounceTimer);
+  const q = this.value.trim();
+  if (!q) { closeDropdown(); lastQuery = ''; return; }
+  debounceTimer = setTimeout(() => searchNominatim(q), 350);
+});
+
+input.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeDropdown();
+});
+
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.search-wrap')) closeDropdown();
+});
+
+// --- Date picker ---
+function setTodayDate() {
+  const d = new Date();
+  const picker = document.getElementById('date-picker');
+  // Set default to today in local time
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  picker.value = `${y}-${m}-${day}`;
+  state.selectedDate = d;
+}
+
+document.getElementById('date-picker').addEventListener('change', function() {
+  if (this.value) {
+    // Parse as local date (avoid UTC offset issues)
+    const [y, m, d] = this.value.split('-').map(Number);
+    state.selectedDate = new Date(y, m - 1, d, 12, 0, 0);
+  } else {
+    state.selectedDate = new Date();
+  }
+  applyRateForCurrentDate();
+});
+
+// --- Collapse toggle ---
+function toggleTop() {
+  const el = document.getElementById('top-sections');
+  const icon = document.getElementById('collapse-icon');
+  const text = document.getElementById('collapse-text');
+  const collapsed = el.classList.toggle('collapsed');
+  icon.textContent = collapsed ? '▼' : '▲';
+  text.textContent = collapsed ? 'Show Details' : 'Hide Details';
+}
+
+// --- Init ---
+setTodayDate();
+renderExpenseList();
+renderSummary();
+</script>
+
+</body>
+</html>
