@@ -519,7 +519,7 @@
         </label>
       </div>
       <div class="travel-effect" id="travel-effect">
-        &#9992;&#65039; Per diem reduced to 70% on travel days
+        &#9992;&#65039; Per diem reduced to 75% on travel days
       </div>
     </div>
   </div>
@@ -585,7 +585,7 @@ const PER_DIEM_DATA = [{"id":1,"state":"AL","destination":"Birmingham","county":
 
 const STANDARD_MIE = 68;
 const STANDARD_LODGING = 110;
-const TRAVEL_DAY_PCT = 0.70;
+const TRAVEL_DAY_PCT = 0.75;
 
 let state = {
   mie: null,
@@ -710,7 +710,7 @@ function renderRateDisplay() {
       </div>
       ${state.isTravelDay ? `
       <div class="rate-item" style="grid-column:1/-1;background:var(--orange-light)">
-        <div class="rate-label" style="color:var(--orange)">&#9992; Travel Day (70%)</div>
+        <div class="rate-label" style="color:var(--orange)">&#9992; Travel Day (75%)</div>
         <div class="rate-value" style="color:var(--orange);font-size:32px">$${effectiveMIE.toFixed(0)}</div>
         <div class="rate-note" style="color:var(--orange)">effective M&amp;IE for today</div>
       </div>` : ''}
@@ -745,7 +745,7 @@ function renderSummary() {
 
   document.getElementById('footer-spent').textContent = formatMoney(totalSpent);
   document.getElementById('footer-rate').textContent = effectiveMIE !== null
-    ? formatMoney(effectiveMIE) + (state.isTravelDay ? ' (70%)' : '')
+    ? formatMoney(effectiveMIE) + (state.isTravelDay ? ' (75%)' : '')
     : '—';
 
   const balRow = document.getElementById('balance-row');
@@ -825,7 +825,7 @@ document.getElementById('travel-toggle').addEventListener('change', function() {
   const label = document.getElementById('toggle-label');
   if (this.checked) {
     effect.classList.add('visible');
-    label.textContent = 'Yes — Travel Day (70%)';
+    label.textContent = 'Yes — Travel Day (75%)';
   } else {
     effect.classList.remove('visible');
     label.textContent = 'No — Full Per Diem';
