@@ -35,7 +35,7 @@
     background: var(--gray-100);
     color: var(--gray-900);
     min-height: 100vh;
-    padding-bottom: 120px;
+    padding-bottom: 100px;
   }
 
   /* Header */
@@ -239,7 +239,7 @@
   .add-btn:active { background: #1557b0; transform: scale(0.96); }
 
   /* Expense List */
-  .expense-list { padding: 0 14px 14px; }
+  .expense-list { padding: 0 14px 14px; max-height: 240px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
   .expense-empty {
     text-align: center;
     padding: 28px 16px;
@@ -304,7 +304,7 @@
     z-index: 200;
     background: white;
     box-shadow: 0 -4px 20px rgba(0,0,0,0.12);
-    padding: 14px 16px 20px;
+    padding: 10px 14px 16px;
     border-radius: 20px 20px 0 0;
   }
 
@@ -312,33 +312,33 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
   }
-  .summary-label { font-size: 13px; color: var(--gray-600); }
-  .summary-value { font-size: 14px; font-weight: 600; color: var(--gray-800); }
+  .summary-label { font-size: 12px; color: var(--gray-600); }
+  .summary-value { font-size: 13px; font-weight: 600; color: var(--gray-800); }
 
-  .divider { height: 1px; background: var(--gray-200); margin: 8px 0; }
+  .divider { height: 1px; background: var(--gray-200); margin: 5px 0; }
 
   .balance-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 14px 16px;
+    padding: 10px 14px;
     border-radius: var(--radius-sm);
-    margin-top: 8px;
+    margin-top: 5px;
     transition: background 0.3s;
   }
   .balance-row.under { background: var(--green-light); }
   .balance-row.over { background: var(--red-light); }
   .balance-row.even { background: var(--gray-100); }
 
-  .balance-label { font-size: 13px; font-weight: 600; }
+  .balance-label { font-size: 12px; font-weight: 600; }
   .balance-row.under .balance-label { color: var(--green); }
   .balance-row.over .balance-label { color: var(--red); }
   .balance-row.even .balance-label { color: var(--gray-600); }
 
   .balance-amount {
-    font-size: 28px;
+    font-size: 22px;
     font-weight: 800;
     line-height: 1;
     transition: color 0.3s;
@@ -347,25 +347,25 @@
   .balance-row.over .balance-amount { color: var(--red); }
   .balance-row.even .balance-amount { color: var(--gray-600); }
 
-  .balance-icon { font-size: 22px; margin-right: 8px; }
+  .balance-icon { font-size: 18px; margin-right: 6px; }
 
   .clear-btn {
     width: 100%;
-    padding: 13px;
+    padding: 10px;
     background: var(--gray-100);
     border: none;
     border-radius: var(--radius-sm);
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
     color: var(--gray-600);
     cursor: pointer;
-    margin-top: 10px;
+    margin-top: 7px;
     transition: background 0.15s;
     -webkit-appearance: none;
   }
   .clear-btn:active { background: var(--gray-200); }
 
-  /* Date display */
+  /* Date picker chip */
   .date-chip {
     display: inline-flex;
     align-items: center;
@@ -375,7 +375,50 @@
     padding: 4px 10px;
     font-size: 12px;
     margin-top: 6px;
+    cursor: pointer;
   }
+  #date-picker {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 12px;
+    font-family: inherit;
+    outline: none;
+    cursor: pointer;
+    padding: 0;
+    min-width: 130px;
+    -webkit-appearance: none;
+  }
+  #date-picker::-webkit-calendar-picker-indicator { filter: invert(1); opacity: 0.8; cursor: pointer; }
+
+  /* Collapsible top sections */
+  #top-sections {
+    overflow: hidden;
+    max-height: 900px;
+    opacity: 1;
+    transition: max-height 0.38s cubic-bezier(.4,0,.2,1), opacity 0.28s;
+  }
+  #top-sections.collapsed { max-height: 0; opacity: 0; pointer-events: none; }
+  .collapse-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: calc(100% - 24px);
+    margin: 8px 12px 0;
+    padding: 9px;
+    background: white;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--gray-600);
+    cursor: pointer;
+    box-shadow: var(--card-shadow);
+    transition: background 0.15s;
+    -webkit-appearance: none;
+  }
+  .collapse-btn:active { background: var(--gray-100); }
 
   /* Custom Nominatim autocomplete dropdown */
   .search-wrap { position: relative; }
@@ -431,9 +474,10 @@
 <div class="app-header">
   <h1>&#128179; Per Diem Tracker</h1>
   <div class="subtitle">FY2026 GSA Rates &bull; Effective October 1, 2025</div>
-  <div class="date-chip">&#128197; <span id="today-date"></span></div>
+  <div class="date-chip">&#128197; <input type="date" id="date-picker"></div>
 </div>
 
+<div id="top-sections">
 <!-- Location -->
 <div class="section">
   <div class="card">
@@ -480,6 +524,11 @@
     </div>
   </div>
 </div>
+</div><!-- end #top-sections -->
+
+<button class="collapse-btn" id="collapse-btn" onclick="toggleTop()">
+  <span id="collapse-icon">&#9650;</span>&nbsp;<span id="collapse-text">Hide Details</span>
+</button>
 
 <!-- Add Expense -->
 <div class="section">
@@ -544,6 +593,10 @@ let state = {
   location: null,
   expenses: [],
   isTravelDay: false,
+  selectedDate: new Date(),
+  lastCity: null,
+  lastCounty: null,
+  lastStateAbbr: null,
 };
 
 // --- Date helpers ---
@@ -789,13 +842,6 @@ document.getElementById('expense-amount').addEventListener('keydown', function(e
   if (e.key === 'Enter') addExpense();
 });
 
-// --- Date ---
-function setTodayDate() {
-  const d = new Date();
-  const opts = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-  document.getElementById('today-date').textContent = d.toLocaleDateString('en-US', opts);
-}
-
 // --- Nominatim Geocoding (OpenStreetMap) ---
 // Full state name → 2-letter abbreviation map
 const STATE_ABBR = {
@@ -894,7 +940,17 @@ function selectResult(el) {
   closeDropdown();
   input.blur();
 
-  const result = lookupRates(stateAbbr, county, city, new Date());
+  state.lastCity = city;
+  state.lastCounty = county;
+  state.lastStateAbbr = stateAbbr;
+
+  applyRateForCurrentDate();
+}
+
+function applyRateForCurrentDate() {
+  const { lastCity: city, lastCounty: county, lastStateAbbr: stateAbbr, selectedDate } = state;
+  if (!stateAbbr) return;
+  const result = lookupRates(stateAbbr, county, city, selectedDate);
   if (result) {
     setRates(result.mie, result.lodging, result.destination + ', ' + stateAbbr);
   } else {
@@ -916,6 +972,39 @@ input.addEventListener('keydown', function(e) {
 document.addEventListener('click', function(e) {
   if (!e.target.closest('.search-wrap')) closeDropdown();
 });
+
+// --- Date picker ---
+function setTodayDate() {
+  const d = new Date();
+  const picker = document.getElementById('date-picker');
+  // Set default to today in local time
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  picker.value = `${y}-${m}-${day}`;
+  state.selectedDate = d;
+}
+
+document.getElementById('date-picker').addEventListener('change', function() {
+  if (this.value) {
+    // Parse as local date (avoid UTC offset issues)
+    const [y, m, d] = this.value.split('-').map(Number);
+    state.selectedDate = new Date(y, m - 1, d, 12, 0, 0);
+  } else {
+    state.selectedDate = new Date();
+  }
+  applyRateForCurrentDate();
+});
+
+// --- Collapse toggle ---
+function toggleTop() {
+  const el = document.getElementById('top-sections');
+  const icon = document.getElementById('collapse-icon');
+  const text = document.getElementById('collapse-text');
+  const collapsed = el.classList.toggle('collapsed');
+  icon.textContent = collapsed ? '▼' : '▲';
+  text.textContent = collapsed ? 'Show Details' : 'Hide Details';
+}
 
 // --- Init ---
 setTodayDate();
