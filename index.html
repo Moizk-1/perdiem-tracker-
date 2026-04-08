@@ -599,6 +599,48 @@ let state = {
   lastStateAbbr: null,
 };
 
+// --- localStorage persistence ---
+const STORAGE_KEY = 'perDiemTracker';
+
+function saveState() {
+  try {
+    const s = {
+      mie: state.mie,
+      lodging: state.lodging,
+      location: state.location,
+      expenses: state.expenses,
+      isTravelDay: state.isTravelDay,
+      selectedDate: state.selectedDate ? state.selectedDate.toISOString() : null,
+      lastCity: state.lastCity,
+      lastCounty: state.lastCounty,
+      lastStateAbbr: state.lastStateAbbr,
+      locationInputValue: document.getElementById('location-input').value,
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
+  } catch(e) {}
+}
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return false;
+    const s = JSON.parse(raw);
+    state.mie = s.mie;
+    state.lodging = s.lodging;
+    state.location = s.location;
+    state.expenses = s.expenses || [];
+    state.isTravelDay = s.isTravelDay || false;
+    state.selectedDate = s.selectedDate ? new Date(s.selectedDate) : new Date();
+    state.lastCity = s.lastCity;
+    state.lastCounty = s.lastCounty;
+    state.lastStateAbbr = s.lastStateAbbr;
+    if (s.locationInputValue) {
+      document.getElementById('location-input').value = s.locationInputValue;
+    }
+    return true;
+  } catch(e) { return false; }
+}
+
 // --- Date helpers ---
 const MONTHS = {
   'january':0,'february':1,'march':2,'april':3,'may':4,'june':5,
@@ -683,6 +725,7 @@ function setRates(mie, lodging, destination) {
   state.location = destination;
   renderRateDisplay();
   renderSummary();
+  saveState();
 }
 
 function renderRateDisplay() {
@@ -801,12 +844,14 @@ function addExpense() {
   document.getElementById('expense-desc').focus();
   renderExpenseList();
   renderSummary();
+  saveState();
 }
 
 function deleteExpense(i) {
   state.expenses.splice(i, 1);
   renderExpenseList();
   renderSummary();
+  saveState();
 }
 
 function clearAll() {
@@ -815,6 +860,7 @@ function clearAll() {
     state.expenses = [];
     renderExpenseList();
     renderSummary();
+    saveState();
   }
 }
 
@@ -832,6 +878,7 @@ document.getElementById('travel-toggle').addEventListener('change', function() {
   }
   renderRateDisplay();
   renderSummary();
+  saveState();
 });
 
 // --- Enter key support ---
@@ -994,6 +1041,7 @@ document.getElementById('date-picker').addEventListener('change', function() {
     state.selectedDate = new Date();
   }
   applyRateForCurrentDate();
+  saveState();
 });
 
 // --- Collapse toggle ---
@@ -1007,7 +1055,26 @@ function toggleTop() {
 }
 
 // --- Init ---
-setTodayDate();
+const restored = loadState();
+if (restored) {
+  // Restore date picker value
+  const d = state.selectedDate;
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  document.getElementById('date-picker').value = `${y}-${m}-${day}`;
+  // Restore travel day toggle
+  const toggle = document.getElementById('travel-toggle');
+  toggle.checked = state.isTravelDay;
+  if (state.isTravelDay) {
+    document.getElementById('travel-effect').classList.add('visible');
+    document.getElementById('toggle-label').textContent = 'Yes \u2014 Travel Day (75%)';
+  }
+  // Restore rate display
+  renderRateDisplay();
+} else {
+  setTodayDate();
+}
 renderExpenseList();
 renderSummary();
 </script>
